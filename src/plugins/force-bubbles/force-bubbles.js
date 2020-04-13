@@ -1,4 +1,10 @@
-/* Dependency: https://cdnjs.cloudflare.com/ajax/libs/d3/5.15.0/d3.min.js,https://jwtest.ngrok.io/src/utilities/vis-plugin-model.js */
+import { select } from 'd3-selection';
+import { transition } from 'd3-transition';
+import { scaleOrdinal } from 'd3-scale';
+import { schemeAccent } from 'd3-scale-chromatic';
+import { forceSimulation, forceManyBody, forceX, forceY, forceCollide } from 'd3-force';
+
+import VisPluginModel from "../../utilities/vis-plugin-model.js";
 
 const addCSS = link => {
   const linkElement = document.createElement('link');
@@ -16,7 +22,7 @@ const loadStylesheets = () => {
 const options = {}
 
 const getNewConfigOptions = function(visModel) {
-  newOptions = options;
+  var newOptions = options;
 
   for (var i = 0; i < visModel.dimensions.length; i++) {
     newOptions['label|' + visModel.dimensions[i].name] = {
@@ -58,9 +64,9 @@ const getNewConfigOptions = function(visModel) {
     }
   }
 
-  sizeByOptions = [];
+  var sizeByOptions = [];
   for (var i = 0; i < visModel.measures.length; i++) {
-      option = {};
+      var option = {};
       option[visModel.measures[i].label] = visModel.measures[i].name;
       sizeByOptions.push(option);
   }
@@ -78,15 +84,15 @@ const getNewConfigOptions = function(visModel) {
   // - by dimension
   // - by pivot key (which are also dimensions)
   // - by pivot series (one color per column)
-  colorByOptions = [];
+  var colorByOptions = [];
   for (var i = 0; i < visModel.dimensions.length; i++) {
-      option = {};
+      var option = {};
       option[visModel.dimensions[i].label] = visModel.dimensions[i].name;
       colorByOptions.push(option)
   }
 
   for (var i = 0; i < visModel.pivot_fields.length; i++) {
-    option = {};
+    var option = {};
     option[visModel.pivot_fields[i].label] = visModel.pivot_fields[i].name;
     colorByOptions.push(option)
   }
@@ -117,10 +123,10 @@ const getNewConfigOptions = function(visModel) {
 }
 
 const buildVis = function(config, visModel, width, height) {
-  visData = visModel.getJson(includeRowId=true, melt=visModel.has_pivots)
+  var visData = visModel.getJson(true, visModel.has_pivots)
   console.log('buildVis() visData', visData)
 
-  const colorScale = d3.scaleOrdinal().range(d3.schemeAccent)
+  const colorScale = scaleOrdinal().range(schemeAccent)
   const calcSize = (value) => Math.floor(5 + (value / visModel.ranges[config.sizeBy].max * 45))  
   const calcX = (value) => {
     if (typeof config.groupBy !== 'undefined') {
@@ -133,7 +139,7 @@ const buildVis = function(config, visModel, width, height) {
   }
 
   const tick = function() {
-    var u = d3.select('svg')
+    var u = select('svg')
       .selectAll('circle')
       .data(visData, d => d.lookerId)
   
@@ -154,12 +160,12 @@ const buildVis = function(config, visModel, width, height) {
     u.exit().remove()
   }
   
-  d3.forceSimulation(visData)
-    .force('charge', d3.forceManyBody().strength(5))
-    // .force('center', d3.forceCenter(width / 2, height / 2))
-    .force('forceX', d3.forceX(d => calcX(d[config.groupBy])))
-    .force('forceY', d3.forceY(height / 2))
-    .force('collision', d3.forceCollide().radius(d => calcSize(d[config.sizeBy])))
+  forceSimulation(visData)
+    .force('charge', forceManyBody().strength(5))
+    // .force('center', forceCenter(width / 2, height / 2))
+    .force('forceX', forceX(d => calcX(d[config.groupBy])))
+    .force('forceY', forceY(height / 2))
+    .force('collision', forceCollide().radius(d => calcSize(d[config.sizeBy])))
     .on('tick', tick);
 }
 
@@ -168,9 +174,9 @@ looker.plugins.visualizations.add({
   options: options,
 
   create: function(element, config) {
-    loadStylesheets();
+    // loadStylesheets();
 
-    this.container = d3.select(element)
+    this.container = select(element)
         .append("svg")
         .attr("id", "visSvg")
         .attr("width", element.clientWidth)
@@ -187,10 +193,12 @@ looker.plugins.visualizations.add({
     document.getElementById('visSvg').setAttribute("width", element.clientWidth);
     document.getElementById('visSvg').setAttribute("height", element.clientHeight);
 
-    visModel = new VisPluginModel(data, config, queryResponse)
-    console.log('visModel', visModel)
+    console.log('updateAsync() VisPluginModel', VisPluginModel)
+    var visModel = new VisPluginModel(data, config, queryResponse)
+    console.log('updateAsync() constructor has returned.')
+    console.log('updateAsync() visModel', visModel)
 
-    newOptions = getNewConfigOptions(visModel)
+    var newOptions = getNewConfigOptions(visModel)
     this.trigger('registerOptions', newOptions)
 
     buildVis(config, visModel, element.clientWidth, element.clientHeight - 16);

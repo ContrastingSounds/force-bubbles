@@ -58,6 +58,7 @@ class VisPluginModel {
    * @param {*} queryResponse 
    */
   constructor(sourceData, config, queryResponse) {
+    console.log('VisPluginModel constructor() called...')
     this.columns = []
     this.dimensions = []
     this.measures = []
@@ -78,6 +79,8 @@ class VisPluginModel {
     this.addMeasures(config, queryResponse)
     this.buildRows(sourceData)
     this.applyFormatting(config)  
+
+    console.log('VisPluginModel constructor() complete', this)
   }
 
   addPivots(queryResponse) {
@@ -382,3 +385,5 @@ class VisPluginModel {
     return jsonData
   }
 }
+
+export default VisPluginModel;
