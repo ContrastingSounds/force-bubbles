@@ -8,18 +8,6 @@ import VisPluginModel from "../../utilities/vis-plugin-model.js";
 
 import './force-bubbles.css';
 
-const addCSS = link => {
-  const linkElement = document.createElement('link');
-
-  linkElement.setAttribute('rel', 'stylesheet');
-  linkElement.setAttribute('href', link);
-
-  document.getElementsByTagName('head')[0].appendChild(linkElement);
-};
-
-const loadStylesheets = () => {
-  addCSS('https://jwtest.ngrok.io/src/utilities/vis-plugin.css');
-};
 
 const options = {}
 
@@ -176,8 +164,6 @@ looker.plugins.visualizations.add({
   options: options,
 
   create: function(element, config) {
-    // loadStylesheets();
-
     this.container = select(element)
         .append("svg")
         .attr("id", "visSvg")
