@@ -181,11 +181,7 @@ looker.plugins.visualizations.add({
     document.getElementById('visSvg').setAttribute("width", element.clientWidth);
     document.getElementById('visSvg').setAttribute("height", element.clientHeight);
 
-    console.log('updateAsync() VisPluginModel', VisPluginModel)
     var visModel = new VisPluginModel(data, config, queryResponse)
-    console.log('updateAsync() constructor has returned.')
-    console.log('updateAsync() visModel', visModel)
-
     var newOptions = getNewConfigOptions(visModel)
     this.trigger('registerOptions', newOptions)
 
