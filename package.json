@@ -2,12 +2,15 @@
   "name": "vis-plugins",
   "version": "0.1.0",
   "description": "Collection of vis plugins for the Looker data platform",
-  "main": "plugins/force-bubbles/force-bubbles.js",
+  "private": true,
   "repository": "https://github.com/ContrastingSounds/Vis-Plugins",
   "author": "Jon Walls <8075115+ContrastingSounds@users.noreply.github.com>",
   "license": "MIT",
   "devDependencies": {
     "webpack": "^4.42.1",
     "webpack-cli": "^3.3.11"
+  },
+  "scripts": {
+    "build": "webpack"
   }
 }
