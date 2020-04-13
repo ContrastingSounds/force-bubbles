@@ -5,5 +5,9 @@
   "main": "plugins/force-bubbles/force-bubbles.js",
   "repository": "https://github.com/ContrastingSounds/Vis-Plugins",
   "author": "Jon Walls <8075115+ContrastingSounds@users.noreply.github.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11"
+  }
 }
