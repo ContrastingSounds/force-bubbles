@@ -1,3 +1,5 @@
+import { AST_False } from "terser"
+
 const newArray = function(length, value) {
   var arr = []
   for (var l = 0; l < length; l++) {
@@ -383,4 +385,126 @@ class VisPluginModel {
   }
 }
 
-export default VisPluginModel;
+const pluginDefaults = {
+  dimensionLabels: true,
+  dimensionHide: false,
+  measureLabels: true,
+  measureStyles: [],
+  colorBy: true,
+  groupBy: false,
+  sizeBy: false,
+}
+
+const getConfigOptions = function(visModel, optionChoices=pluginDefaults, baseOptions={}) {
+  var newOptions = baseOptions
+
+  for (var i = 0; i < visModel.dimensions.length; i++) {
+    if (optionChoices.dimensionLabels) {
+      newOptions['label|' + visModel.dimensions[i].name] = {
+        section: 'Dimensions',
+        type: 'string',
+        label: visModel.dimensions[i].label,
+        default: visModel.dimensions[i].label,
+        order: i * 10 + 1,
+      }
+    }
+
+    if (optionChoices.dimensionHide) {
+      newOptions['hide|' + visModel.dimensions[i].name] = {
+        section: 'Dimensions',
+        type: 'boolean',
+        label: 'Hide',
+        display_size: 'third',
+        order: i * 10 + 2,
+      }
+    }
+  }
+
+  for (var i = 0; i < visModel.measures.length; i++) {
+    if (optionChoices.measureLabels) {
+      newOptions['label|' + visModel.measures[i].name] = {
+        section: 'Measures',
+        type: 'string',
+        label: visModel.measures[i].label_short || visModel.measures[i].label,
+        default: visModel.measures[i].label_short || visModel.measures[i].label,
+        order: 100 + i * 10 + 1,
+      }
+    }
+
+    if (optionChoices.measureStyles.length > 0) {
+      newOptions['style|' + visModel.measures[i].name] = {
+        section: 'Measures',
+        type: 'string',
+        label: 'Style',
+        display: 'select',
+        values: optionChoices.measureStyles,
+        order: 100 + i * 10 + 2
+      }
+    }
+  }
+
+  if (optionChoices.sizeBy) {
+    var sizeByOptions = [];
+    for (var i = 0; i < visModel.measures.length; i++) {
+        var option = {};
+        option[visModel.measures[i].label] = visModel.measures[i].name;
+        sizeByOptions.push(option);
+    }
+  
+    newOptions["sizeBy"] = {
+        section: "Visualization",
+        type: "string",
+        label: "Size By",
+        display: "select",
+        values: sizeByOptions,
+        default: "0",
+    }
+  }
+
+  // colorByOptions include:
+  // - by dimension
+  // - by pivot key (which are also dimensions)
+  // - by pivot series (one color per column)
+  var colorByOptions = [];
+  for (var i = 0; i < visModel.dimensions.length; i++) {
+      var option = {};
+      option[visModel.dimensions[i].label] = visModel.dimensions[i].name;
+      colorByOptions.push(option)
+  }
+
+  for (var i = 0; i < visModel.pivot_fields.length; i++) {
+    var option = {};
+    option[visModel.pivot_fields[i].label] = visModel.pivot_fields[i].name;
+    colorByOptions.push(option)
+  }
+
+  if (visModel.pivot_fields.length > 1 ) {
+    colorByOptions.push({'Pivot Series': 'lookerPivotKey'})
+  }
+  
+  if (optionChoices.colorBy) {
+    newOptions["colorBy"] = {
+      section: "Visualization",
+      type: "string",
+      label: "Color By",
+      display: "select",
+      values: colorByOptions,
+      default: "0",
+    } 
+  }
+
+  if (optionChoices.groupBy) {
+    newOptions["groupBy"] = {
+      section: "Visualization",
+      type: "string",
+      label: "Group By",
+      display: "select",
+      values: colorByOptions,
+      default: "0",
+    } 
+  }
+
+  return newOptions
+}
+
+export { VisPluginModel, getConfigOptions };

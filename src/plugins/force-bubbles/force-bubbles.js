@@ -4,113 +4,11 @@ import { scaleOrdinal } from 'd3-scale';
 import { schemeAccent } from 'd3-scale-chromatic';
 import { forceSimulation, forceManyBody, forceX, forceY, forceCollide } from 'd3-force';
 
-import VisPluginModel from "../../utilities/vis-plugin-model.js";
+import { VisPluginModel, getConfigOptions } from "../../utilities/vis-plugin.js";
 
 import './force-bubbles.css';
 
-
 const options = {}
-
-const getNewConfigOptions = function(visModel) {
-  var newOptions = options;
-
-  for (var i = 0; i < visModel.dimensions.length; i++) {
-    newOptions['label|' + visModel.dimensions[i].name] = {
-      section: 'Dimensions',
-      type: 'string',
-      label: visModel.dimensions[i].label,
-      default: visModel.dimensions[i].label,
-      order: i * 10 + 1,
-    }
-
-    newOptions['hide|' + visModel.dimensions[i].name] = {
-      section: 'Dimensions',
-      type: 'boolean',
-      label: 'Hide',
-      display_size: 'third',
-      order: i * 10 + 2,
-    }
-  }
-
-  for (var i = 0; i < visModel.measures.length; i++) {
-    newOptions['label|' + visModel.measures[i].name] = {
-      section: 'Measures',
-      type: 'string',
-      label: visModel.measures[i].label_short || visModel.measures[i].label,
-      default: visModel.measures[i].label_short || visModel.measures[i].label,
-      order: 100 + i * 10 + 1,
-    }
-
-    newOptions['style|' + visModel.measures[i].name] = {
-      section: 'Measures',
-      type: 'string',
-      label: 'Style',
-      display: 'select',
-      values: [
-        {'Normal': 'normal'},
-        {'Hide': 'hide'}
-      ],
-      order: 100 + i * 10 + 2
-    }
-  }
-
-  var sizeByOptions = [];
-  for (var i = 0; i < visModel.measures.length; i++) {
-      var option = {};
-      option[visModel.measures[i].label] = visModel.measures[i].name;
-      sizeByOptions.push(option);
-  }
-
-  newOptions["sizeBy"] = {
-      section: "Data",
-      type: "string",
-      label: "Size By",
-      display: "select",
-      values: sizeByOptions,
-      default: "0",
-  }
-
-  // colorByOptions include:
-  // - by dimension
-  // - by pivot key (which are also dimensions)
-  // - by pivot series (one color per column)
-  var colorByOptions = [];
-  for (var i = 0; i < visModel.dimensions.length; i++) {
-      var option = {};
-      option[visModel.dimensions[i].label] = visModel.dimensions[i].name;
-      colorByOptions.push(option)
-  }
-
-  for (var i = 0; i < visModel.pivot_fields.length; i++) {
-    var option = {};
-    option[visModel.pivot_fields[i].label] = visModel.pivot_fields[i].name;
-    colorByOptions.push(option)
-  }
-
-  if (visModel.pivot_fields.length > 1 ) {
-    colorByOptions.push({'Pivot Series': 'lookerPivotKey'})
-  }
-  
-  newOptions["colorBy"] = {
-      section: "Data",
-      type: "string",
-      label: "Color By",
-      display: "select",
-      values: colorByOptions,
-      default: "0",
-  } 
-
-  newOptions["groupBy"] = {
-    section: "Data",
-    type: "string",
-    label: "Group By",
-    display: "select",
-    values: colorByOptions,
-    default: "0",
-} 
-  
-  return newOptions
-}
 
 const buildVis = function(config, visModel, width, height) {
   var visData = visModel.getJson(true, visModel.has_pivots)
@@ -159,7 +57,6 @@ const buildVis = function(config, visModel, width, height) {
     .on('tick', tick);
 }
 
-
 looker.plugins.visualizations.add({
   options: options,
 
@@ -182,8 +79,16 @@ looker.plugins.visualizations.add({
     document.getElementById('visSvg').setAttribute("height", element.clientHeight);
 
     var visModel = new VisPluginModel(data, config, queryResponse)
-    var newOptions = getNewConfigOptions(visModel)
-    this.trigger('registerOptions', newOptions)
+    var configOptions = {
+      dimensionLabels: true,
+      dimensionHide: false,
+      measureLabels: true,
+      measureStyles: [],
+      colorBy: true,
+      groupBy: true,
+      sizeBy: true,
+    }
+    this.trigger('registerOptions', getConfigOptions(visModel, configOptions))
 
     buildVis(config, visModel, element.clientWidth, element.clientHeight - 16);
     done();
