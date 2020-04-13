@@ -8,14 +8,29 @@ import { VisPluginModel, getConfigOptions } from "../utilities/vis-plugin.js";
 
 import './force-bubbles.css';
 
-const options = {}
+const options = {
+  scale: {
+    section: ' Visualization',
+    type: 'number',
+    display: 'range',
+    label: 'Scale Size By',
+    default: 1.0,
+    min: 0.2,
+    max: 2.0,
+    step: 0.2,
+    order: 100000,
+  }
+}
 
 const buildVis = function(config, visModel, width, height) {
   var visData = visModel.getJson(true, visModel.has_pivots)
   console.log('buildVis() visData', visData)
 
   const colorScale = scaleOrdinal().range(schemeAccent)
-  const calcSize = (value) => Math.floor(5 + (value / visModel.ranges[config.sizeBy].max * 45))  
+  const calcSize = (value) => Math.floor(
+    5 + (value / visModel.ranges[config.sizeBy].max * 45 * config.scale)
+  )
+  console.log('buildVis() config.scale', config.scale)
   const calcX = (value) => {
     if (typeof config.groupBy !== 'undefined') {
       var catWidth = visModel.ranges[config.groupBy].set.length + 1
@@ -88,7 +103,7 @@ looker.plugins.visualizations.add({
       groupBy: true,
       sizeBy: true,
     }
-    this.trigger('registerOptions', getConfigOptions(visModel, optionChoices))
+    this.trigger('registerOptions', getConfigOptions(visModel, optionChoices, options))
 
     buildVis(config, visModel, element.clientWidth, element.clientHeight - 16);
     done();

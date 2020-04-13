@@ -457,6 +457,7 @@ const getConfigOptions = function(visModel, optionChoices=pluginDefaults, baseOp
         display: "select",
         values: sizeByOptions,
         default: "0",
+        order: 300,
     }
   }
 
@@ -489,6 +490,7 @@ const getConfigOptions = function(visModel, optionChoices=pluginDefaults, baseOp
       display: "select",
       values: colorByOptions,
       default: "0",
+      order: 100,
     } 
   }
 
@@ -500,6 +502,7 @@ const getConfigOptions = function(visModel, optionChoices=pluginDefaults, baseOp
       display: "select",
       values: colorByOptions,
       default: "0",
+      order: 200,
     } 
   }
 
