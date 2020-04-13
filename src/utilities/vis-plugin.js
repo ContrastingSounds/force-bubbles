@@ -335,7 +335,8 @@ class VisPluginModel {
    * Returns dataset as a simple json object
    * Includes line_items only (e.g. no row subtotals)
    * 
-   * Convenience function when using sourceData as an object to support e.g. Vega Lite visualisations
+   * @param {boolean} includeRowId - adds a unique lookerId value to each row
+   * @param {boolean} melt - if dataset is pivoted, will 'melt' back to flat data
    */
   getJson(includeRowId=true, melt=false) {
     var jsonData = []
