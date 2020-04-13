@@ -1,5 +1,3 @@
-import { AST_False } from "terser"
-
 const newArray = function(length, value) {
   var arr = []
   for (var l = 0; l < length; l++) {
@@ -390,12 +388,13 @@ const pluginDefaults = {
   dimensionHide: false,
   measureLabels: true,
   measureStyles: [],
-  colorBy: true,
+  colorBy: false,
   groupBy: false,
   sizeBy: false,
 }
 
 const getConfigOptions = function(visModel, optionChoices=pluginDefaults, baseOptions={}) {
+  var optionChoices = {...pluginDefaults, ...optionChoices} 
   var newOptions = baseOptions
 
   for (var i = 0; i < visModel.dimensions.length; i++) {
@@ -452,7 +451,7 @@ const getConfigOptions = function(visModel, optionChoices=pluginDefaults, baseOp
     }
   
     newOptions["sizeBy"] = {
-        section: "Visualization",
+        section: " Visualization",
         type: "string",
         label: "Size By",
         display: "select",
@@ -484,7 +483,7 @@ const getConfigOptions = function(visModel, optionChoices=pluginDefaults, baseOp
   
   if (optionChoices.colorBy) {
     newOptions["colorBy"] = {
-      section: "Visualization",
+      section: " Visualization",
       type: "string",
       label: "Color By",
       display: "select",
@@ -495,7 +494,7 @@ const getConfigOptions = function(visModel, optionChoices=pluginDefaults, baseOp
 
   if (optionChoices.groupBy) {
     newOptions["groupBy"] = {
-      section: "Visualization",
+      section: " Visualization",
       type: "string",
       label: "Group By",
       display: "select",

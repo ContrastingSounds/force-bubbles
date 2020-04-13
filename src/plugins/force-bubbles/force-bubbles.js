@@ -79,7 +79,7 @@ looker.plugins.visualizations.add({
     document.getElementById('visSvg').setAttribute("height", element.clientHeight);
 
     var visModel = new VisPluginModel(data, config, queryResponse)
-    var configOptions = {
+    var optionChoices = {
       dimensionLabels: true,
       dimensionHide: false,
       measureLabels: true,
@@ -88,7 +88,7 @@ looker.plugins.visualizations.add({
       groupBy: true,
       sizeBy: true,
     }
-    this.trigger('registerOptions', getConfigOptions(visModel, configOptions))
+    this.trigger('registerOptions', getConfigOptions(visModel, optionChoices))
 
     buildVis(config, visModel, element.clientWidth, element.clientHeight - 16);
     done();
