@@ -1,0 +1,19 @@
+{
+  "label": "Force Bubbles",
+  "category_label": "Plug-ins",
+  "branding": {
+    "image_uri": "https://marketplace-api.looker.com/visualization-screenshots/spider_icon.png",
+    "tagline": "Clustered bubbles by dimension."
+  },
+    "constants": {
+        "VIS_LABEL": {
+            "label": "Force Bubbles",
+            "description": "Uses d3.js force module to cluster bubbles by dimension."
+        },
+        "VIS_ID": {
+            "label": "force-bubbles",
+            "description": "Force Bubbles visualization.",
+            "value_constraint": "visualization"
+        }
+    }
+}
