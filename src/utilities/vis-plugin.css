@@ -1,0 +1,29 @@
+div.visPlugin {
+  font-family: Open Sans,Helvetica,Arial,sans-serif;
+  font-size: 10px;   
+  width: 100%;
+  border: 1px solid #CCCCCC;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+div.visContainer p {
+  border: 1px solid #CCCCCC;
+  font-size: 10px; 
+  height: 25px;
+  padding: 5px;
+}
+
+.primary {
+  border: 1px solid #CCCCCC;
+  background: #E60000;
+  font-weight: bold;
+  color: #FFFFFF;
+}
+
+.secondary {
+  border: 1px solid #CCCCCC;
+  background: #AAAAAA;
+  font-weight: normal;
+  color: #FFFFFF;
+}
