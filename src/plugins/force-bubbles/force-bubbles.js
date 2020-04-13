@@ -6,6 +6,8 @@ import { forceSimulation, forceManyBody, forceX, forceY, forceCollide } from 'd3
 
 import VisPluginModel from "../../utilities/vis-plugin-model.js";
 
+import './force-bubbles.css';
+
 const addCSS = link => {
   const linkElement = document.createElement('link');
 
