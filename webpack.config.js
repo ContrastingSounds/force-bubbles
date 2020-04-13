@@ -1,12 +1,10 @@
 const path = require('path');
 
 module.exports = {
-  entry: {
-    "force-bubbles": './src/plugins/force-bubbles/force-bubbles.js',
-  },
+  entry: './src/plugin/force-bubbles.js',
   output: {
-    filename: '[name].js',
-    path: path.resolve(__dirname, 'dist'),
+    filename: 'force-bubbles.js',
+    path: path.resolve(__dirname),
   },
   module: {
     rules: [
