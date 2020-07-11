@@ -1,3 +1,13 @@
+const pluginDefaults = {
+  dimensionLabels: true,
+  dimensionHide: false,
+  measureLabels: true,
+  measureStyles: [],
+  colorBy: false,
+  groupBy: false,
+  sizeBy: false,
+}
+
 const newArray = function(length, value) {
   var arr = []
   for (var l = 0; l < length; l++) {
@@ -382,16 +392,6 @@ class VisPluginModel {
     }
     return jsonData
   }
-}
-
-const pluginDefaults = {
-  dimensionLabels: true,
-  dimensionHide: false,
-  measureLabels: true,
-  measureStyles: [],
-  colorBy: false,
-  groupBy: false,
-  sizeBy: false,
 }
 
 const getConfigOptions = function(visModel, optionChoices=pluginDefaults, baseOptions={}) {

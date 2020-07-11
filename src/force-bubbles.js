@@ -4,11 +4,12 @@ import { scaleOrdinal } from 'd3-scale';
 import { schemeAccent } from 'd3-scale-chromatic';
 import { forceSimulation, forceManyBody, forceX, forceY, forceCollide } from 'd3-force';
 
-import { VisPluginModel, getConfigOptions } from "../utilities/vis-plugin.js";
+import { VisPluginModel, getConfigOptions } from "../../vis-tools/vis_plugin.js";
 
 import './force-bubbles.css';
 
-const options = {
+
+const visOptions = {
   scale: {
     section: ' Visualization',
     type: 'number',
@@ -22,19 +23,25 @@ const options = {
   }
 }
 
-const buildVis = function(config, visModel, width, height) {
+const buildVis = function(visModel, width, height) {
+  console.log('buildVis() visModel', visModel)
+
   var visData = visModel.getJson(true, visModel.has_pivots)
   console.log('buildVis() visData', visData)
 
   const colorScale = scaleOrdinal().range(schemeAccent)
-  const calcSize = (value) => Math.floor(
-    5 + (value / visModel.ranges[config.sizeBy].max * 45 * config.scale)
-  )
-  console.log('buildVis() config.scale', config.scale)
+
+  const calcSize = (value) => {
+    var max = visModel.ranges[visModel.config.sizeBy].max
+    var scale = visModel.config.scale
+    return Math.floor(5 + (value / max * 45 * scale))
+  }
+  
   const calcX = (value) => {
-    if (typeof config.groupBy !== 'undefined') {
-      var catWidth = visModel.ranges[config.groupBy].set.length + 1
-      var catIndex = visModel.ranges[config.groupBy].set.indexOf(value) + 1
+    if (typeof visModel.config.groupBy !== 'undefined') {
+      var range = visModel.ranges[visModel.config.groupBy]
+      var catWidth = range.set.length + 1
+      var catIndex = range.set.indexOf(value) + 1
       return width / catWidth * catIndex
     } else {
       return width / 2
@@ -48,17 +55,17 @@ const buildVis = function(config, visModel, width, height) {
   
     u.enter()
         .append('circle')
-        .attr('r', d => calcSize(d[config.sizeBy]))
-        .attr('cx', d => Math.random() * width)
-        .attr('cy', d => Math.random() * height)
-        .style('fill', d => colorScale(d[config.colorBy]))
+        .attr('r', d => calcSize(d[visModel.config.sizeBy]))
+        .attr('cx', Math.random() * width)
+        .attr('cy', Math.random() * height)
+        .style('fill', d => colorScale(d[visModel.config.colorBy]))
       .merge(u)
         .transition()
         .duration(100)
-        .attr('r', d => calcSize(d[config.sizeBy]))
+        .attr('r', d => calcSize(d[visModel.config.sizeBy]))
         .attr('cx', d => d.x)
         .attr('cy', d => d.y)
-        .style('fill', d => colorScale(d[config.colorBy]))
+        .style('fill', d => colorScale(d[visModel.config.colorBy]))
   
     u.exit().remove()
   }
@@ -66,14 +73,14 @@ const buildVis = function(config, visModel, width, height) {
   forceSimulation(visData)
     .force('charge', forceManyBody().strength(5))
     // .force('center', forceCenter(width / 2, height / 2))
-    .force('forceX', forceX(d => calcX(d[config.groupBy])))
+    .force('forceX', forceX(d => calcX(d[visModel.config.groupBy])))
     .force('forceY', forceY(height / 2))
-    .force('collision', forceCollide().radius(d => calcSize(d[config.sizeBy])))
+    .force('collision', forceCollide().radius(d => calcSize(d[visModel.config.sizeBy])))
     .on('tick', tick);
 }
 
 looker.plugins.visualizations.add({
-  options: options,
+  options: visOptions,
 
   create: function(element, config) {
     this.container = select(element)
@@ -94,6 +101,7 @@ looker.plugins.visualizations.add({
     document.getElementById('visSvg').setAttribute("height", element.clientHeight);
 
     var visModel = new VisPluginModel(data, config, queryResponse)
+    
     var optionChoices = {
       dimensionLabels: true,
       dimensionHide: false,
@@ -103,9 +111,9 @@ looker.plugins.visualizations.add({
       groupBy: true,
       sizeBy: true,
     }
-    this.trigger('registerOptions', getConfigOptions(visModel, optionChoices, options))
+    this.trigger('registerOptions', getConfigOptions(visModel, optionChoices, visOptions))
 
-    buildVis(config, visModel, element.clientWidth, element.clientHeight - 16);
+    buildVis(visModel, element.clientWidth, element.clientHeight - 16);
     done();
   }
 })
