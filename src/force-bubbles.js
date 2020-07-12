@@ -1,4 +1,4 @@
-import { select } from 'd3-selection';
+import { select, event } from 'd3-selection';
 import { transition } from 'd3-transition';
 import { scaleOrdinal } from 'd3-scale';
 import { schemeAccent } from 'd3-scale-chromatic';
@@ -22,7 +22,7 @@ const visOptions = {
   }
 }
 
-const buildVis = function(visModel, width, height, updateConfig) {
+const buildVis = function(visModel, width, height) {
   var visData = visModel.getJson(true, visModel.has_pivots)
   const colorScale = scaleOrdinal().range(schemeAccent)
 
@@ -59,7 +59,9 @@ const buildVis = function(visModel, width, height, updateConfig) {
       simulation.tick();
     }
 
-    var svg = select('svg')
+    var svg = select('#visSvg')
+      .attr("width", width)
+      .attr("height", height)
       .selectAll('circle')
         .data(visData, d => d.lookerId) 
 
@@ -69,6 +71,29 @@ const buildVis = function(visModel, width, height, updateConfig) {
         .attr('cx', d => d.x)
         .attr('cy', d => d.y)
         .style('fill', d => colorScale(d[visModel.config.colorBy]))
+        .on("mouseover", d => {
+          console.log('mouseover', event)
+          
+          var xPosition = event.pageX;
+          var yPosition = event.pageY;
+
+          select("#tooltip")
+            .style("left", xPosition + "px")
+            .style("top", yPosition + "px")                   
+            .html(visModel.getTooltipFromD3(d))
+            .classed("hidden", false);
+        })
+        .on("mousemove", () => {
+          var xPosition = event.pageX
+          var yPosition = event.pageY
+
+          select('#tooltip')
+            .style('left', xPosition + 'px')
+            .style('top', yPosition + 'px')
+        })
+        .on("mouseout", () => {
+          select("#tooltip").classed("hidden", true);
+        })
 
     svg.transition()
       .duration(250)
@@ -78,6 +103,7 @@ const buildVis = function(visModel, width, height, updateConfig) {
         .style('fill', d => colorScale(d[visModel.config.colorBy]))
   
     svg.exit().remove()
+
   }
 }
 
@@ -90,6 +116,11 @@ looker.plugins.visualizations.add({
         .attr("id", "visSvg")
         .attr("width", element.clientWidth)
         .attr("height", element.clientHeight);
+
+    this.tooltip = select(element)
+        .append("div")
+        .attr("class", "hidden")
+        .attr("id", "tooltip")
   },
 
   updateAsync: function(data, element, config, queryResponse, details, done) {
@@ -124,7 +155,7 @@ looker.plugins.visualizations.add({
     buildVis(visModel, element.clientWidth, element.clientHeight - 16)
 
     // DEBUG OUTPUT AND DONE
-    // console.log('visModel', visModel)
+    console.log('visModel', visModel)
     // console.log('container', this.container)
     done();
   }
