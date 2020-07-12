@@ -67,6 +67,7 @@ const buildVis = function(visModel, width, height) {
 
     svg.enter()
       .append('circle')
+        .classed('bubble', true)
         .attr('r', d => calcSize(d[visModel.config.sizeBy]))
         .attr('cx', d => d.x)
         .attr('cy', d => d.y)
@@ -104,6 +105,37 @@ const buildVis = function(visModel, width, height) {
   
     svg.exit().remove()
 
+    // ensure unique categories in different fields by joining field name to field value
+    var categoricals = []
+    visModel.ranges[visModel.config.groupBy].set.forEach(categorical => {
+      categoricals.push({
+        id: [visModel.config.groupBy, categorical].join('.'),
+        value: categorical
+      })
+    })
+
+    var labels = select('#visSvg')
+      .selectAll('text')
+        .data(categoricals, d => d.id) 
+
+    labels.enter()
+      .append('text')
+        .attr('x', d => calcX(d.value))
+        .attr('y', 20)
+        .attr('text-anchor', 'middle')
+        .selectAll('tspan.text')
+          .data(d => d.value.split(' ')).enter()
+            .append('tspan')
+            .attr('class', 'label')
+            .attr('x', function(d) { return select(this.parentNode).attr('x')})
+            .attr('dy', 16)
+            .text(d => d)
+            
+    labels.transition()
+      .duration(250)
+        .attr('x', d => calcX(d.value))
+
+    labels.exit().remove()
   }
 }
 
@@ -124,7 +156,6 @@ looker.plugins.visualizations.add({
   },
 
   updateAsync: function(data, element, config, queryResponse, details, done) {
-    console.log('updateAsync() called...')
     // ERROR HANDLING
 
     this.clearErrors();
@@ -156,7 +187,7 @@ looker.plugins.visualizations.add({
 
     // DEBUG OUTPUT AND DONE
     console.log('visModel', visModel)
-    // console.log('container', this.container)
+    console.log('container', this.container)
     done();
   }
 })
