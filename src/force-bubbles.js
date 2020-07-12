@@ -8,7 +8,6 @@ import { VisPluginModel, getConfigOptions } from "../../vis-tools/vis_plugin.js"
 
 import './force-bubbles.css';
 
-
 const visOptions = {
   scale: {
     section: ' Visualization',
@@ -23,18 +22,18 @@ const visOptions = {
   }
 }
 
-const buildVis = function(visModel, width, height) {
-  console.log('buildVis() visModel', visModel)
-
+const buildVis = function(visModel, width, height, updateConfig) {
   var visData = visModel.getJson(true, visModel.has_pivots)
-  console.log('buildVis() visData', visData)
-
   const colorScale = scaleOrdinal().range(schemeAccent)
 
   const calcSize = (value) => {
-    var max = visModel.ranges[visModel.config.sizeBy].max
-    var scale = visModel.config.scale
-    return Math.floor(5 + (value / max * 45 * scale))
+    if (typeof visModel.config.sizeBy !== 'undefined') {
+      var max = visModel.ranges[visModel.config.sizeBy].max
+      var scale = visModel.config.scale
+      return Math.floor(5 + (value / max * 45 * scale))
+    } else {
+      return 20
+    }
   }
   
   const calcX = (value) => {
@@ -48,35 +47,38 @@ const buildVis = function(visModel, width, height) {
     }
   }
 
-  const tick = function() {
-    var u = select('svg')
+  const simulation = forceSimulation(visData)
+    .force('charge', forceManyBody().strength(5))
+    .force('forceX', forceX(d => calcX(d[visModel.config.groupBy])))
+    .force('forceY', forceY(height / 2))
+    .force('collision', forceCollide().radius(d => calcSize(d[visModel.config.sizeBy])))
+    .stop()
+
+  if (typeof visModel.config.sizeBy !== 'undefined' && typeof visModel.config.groupBy !== 'undefined') {
+    for (var i = 0, n = Math.ceil(Math.log(simulation.alphaMin()) / Math.log(1 - simulation.alphaDecay())); i < n; ++i) {
+      simulation.tick();
+    }
+
+    var svg = select('svg')
       .selectAll('circle')
-      .data(visData, d => d.lookerId)
-  
-    u.enter()
-        .append('circle')
-        .attr('r', d => calcSize(d[visModel.config.sizeBy]))
-        .attr('cx', Math.random() * width)
-        .attr('cy', Math.random() * height)
-        .style('fill', d => colorScale(d[visModel.config.colorBy]))
-      .merge(u)
-        .transition()
-        .duration(100)
+        .data(visData, d => d.lookerId) 
+
+    svg.enter()
+      .append('circle')
         .attr('r', d => calcSize(d[visModel.config.sizeBy]))
         .attr('cx', d => d.x)
         .attr('cy', d => d.y)
         .style('fill', d => colorScale(d[visModel.config.colorBy]))
+
+    svg.transition()
+      .duration(250)
+        .attr('r', d => calcSize(d[visModel.config.sizeBy]))
+        .attr('cx', d =>  d.x)
+        .attr('cy', d => d.y)
+        .style('fill', d => colorScale(d[visModel.config.colorBy]))
   
-    u.exit().remove()
+    svg.exit().remove()
   }
-  
-  forceSimulation(visData)
-    .force('charge', forceManyBody().strength(5))
-    // .force('center', forceCenter(width / 2, height / 2))
-    .force('forceX', forceX(d => calcX(d[visModel.config.groupBy])))
-    .force('forceY', forceY(height / 2))
-    .force('collision', forceCollide().radius(d => calcSize(d[visModel.config.sizeBy])))
-    .on('tick', tick);
 }
 
 looker.plugins.visualizations.add({
@@ -91,18 +93,23 @@ looker.plugins.visualizations.add({
   },
 
   updateAsync: function(data, element, config, queryResponse, details, done) {
+    console.log('updateAsync() called...')
+    // ERROR HANDLING
+
     this.clearErrors();
 
-    console.log('sourceData:', data);
-    console.log('config:', config);
-    console.log('queryResponse:', queryResponse);
 
-    document.getElementById('visSvg').setAttribute("width", element.clientWidth);
-    document.getElementById('visSvg').setAttribute("height", element.clientHeight);
+    // INITIALISE THE VIS
+
+
+    // BUILD THE VIS
+    // 1. Create object
+    // 2. Register options
+    // 3. Build vis
 
     var visModel = new VisPluginModel(data, config, queryResponse)
     
-    var optionChoices = {
+    var pluginSettings = {
       dimensionLabels: true,
       dimensionHide: false,
       measureLabels: true,
@@ -110,10 +117,15 @@ looker.plugins.visualizations.add({
       colorBy: true,
       groupBy: true,
       sizeBy: true,
+      states: {},
     }
-    this.trigger('registerOptions', getConfigOptions(visModel, optionChoices, visOptions))
+    this.trigger('registerOptions', getConfigOptions(visModel, pluginSettings, visOptions))
 
-    buildVis(visModel, element.clientWidth, element.clientHeight - 16);
+    buildVis(visModel, element.clientWidth, element.clientHeight - 16)
+
+    // DEBUG OUTPUT AND DONE
+    // console.log('visModel', visModel)
+    // console.log('container', this.container)
     done();
   }
 })
