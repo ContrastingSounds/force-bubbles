@@ -109,7 +109,7 @@ const buildVis = function(visModel, width, height) {
     var categoricals = []
     visModel.ranges[visModel.config.groupBy].set.forEach(categorical => {
       categoricals.push({
-        id: [visModel.config.groupBy, categorical].join('.'),
+        id: ['group', visModel.config.groupBy, categorical].join('.'),
         value: categorical
       })
     })
@@ -141,6 +141,47 @@ const buildVis = function(visModel, width, height) {
       })
     
     labels.exit().remove()
+     
+    // ensure unique categories in different fields by joining field name to field value
+    var colorBys = []
+    visModel.ranges[visModel.config.colorBy].set.forEach(colorBy => {
+      colorBys.push({
+        id: ['color', visModel.config.colorBy, colorBy].join('.'),
+        value: colorBy
+      })
+    })
+
+    var rects = select('#visSvg')
+      .selectAll('.legendRect')                     
+        .data(colorBys, d => d.id)                                  
+    
+    rects.enter()        
+      .append('rect')
+        .attr('class', 'legendRect')                             
+        .attr('width', 12)
+        .attr('height', 12)
+        .attr('x', (width / 2) - 100)
+        .attr('y', (d, i) => height - (i + 1) * 20)
+        .style('fill', d => colorScale(d.value))                            
+    
+    rects.transition()
+      .duration(0)
+        .attr('x', (width / 2) - 100)
+
+    rects.exit().remove()
+
+    var keys = select('#visSvg')
+      .selectAll('.legendKey')
+        .data(colorBys, d => d.id)
+    
+    keys.enter()
+      .append('text')
+        .attr('class', 'legendKey')
+        .attr('x', (width / 2) - 85)
+        .attr('y', (d, i) => height + 10 - (i + 1) * 20)
+        .text(d => d.value)
+    
+    keys.exit().remove()
   }
 }
 

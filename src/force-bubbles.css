@@ -10,6 +10,12 @@
   font-weight: bold;
 }
 
+.legendKey {
+  fill: #696969;
+  font-family: "Open Sans",Helvetica,Arial,sans-serif;
+  font-size: 12px;
+}
+
 #tooltip {
   position: absolute;
   width: auto;
