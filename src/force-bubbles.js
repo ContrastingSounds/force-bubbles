@@ -1,4 +1,4 @@
-import { select, event } from 'd3-selection';
+import { select, selectAll, event } from 'd3-selection';
 import { transition } from 'd3-transition';
 import { scaleOrdinal } from 'd3-scale';
 import { schemeAccent } from 'd3-scale-chromatic';
@@ -122,8 +122,9 @@ const buildVis = function(visModel, width, height) {
       .append('text')
         .attr('x', d => calcX(d.value))
         .attr('y', 20)
-        .attr('text-anchor', 'middle')          
-        .selectAll('tspan.text')
+        .attr('text-anchor', 'middle')
+        // .text(d => d.value)
+        .selectAll('tspan')
           .data(d => d.value.split(' ')).enter()
             .append('tspan')
             .attr('class', 'label')
@@ -132,11 +133,11 @@ const buildVis = function(visModel, width, height) {
             .text(d => d)
     
     labels.transition()
-      .duration(250)
       .attr('x', d => calcX(d.value))
-      .on('end', () => {
-        selectAll('tspan.text')
-          .attr('x', function(d) { return select(this.parentNode).attr('x')})
+      .on('end', d => {
+        selectAll('tspan')
+          .transition()
+          .attr('x', function(d) { return select(this.parentNode).attr('x') })
       })
     
     labels.exit().remove()
