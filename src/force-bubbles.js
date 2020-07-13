@@ -122,7 +122,7 @@ const buildVis = function(visModel, width, height) {
       .append('text')
         .attr('x', d => calcX(d.value))
         .attr('y', 20)
-        .attr('text-anchor', 'middle')
+        .attr('text-anchor', 'middle')          
         .selectAll('tspan.text')
           .data(d => d.value.split(' ')).enter()
             .append('tspan')
@@ -130,11 +130,15 @@ const buildVis = function(visModel, width, height) {
             .attr('x', function(d) { return select(this.parentNode).attr('x')})
             .attr('dy', 16)
             .text(d => d)
-            
+    
     labels.transition()
       .duration(250)
-        .attr('x', d => calcX(d.value))
-
+      .attr('x', d => calcX(d.value))
+      .on('end', () => {
+        selectAll('tspan.text')
+          .attr('x', function(d) { return select(this.parentNode).attr('x')})
+      })
+    
     labels.exit().remove()
   }
 }
