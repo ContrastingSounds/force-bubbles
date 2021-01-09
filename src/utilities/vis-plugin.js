@@ -68,6 +68,8 @@ class VisPluginModel {
    * @param {*} queryResponse 
    */
   constructor(sourceData, config, queryResponse) {
+    console.log('VisPluginModel()')
+
     this.columns = []
     this.dimensions = []
     this.measures = []
@@ -120,6 +122,7 @@ class VisPluginModel {
   }
 
   addDimensions(config, queryResponse) {
+    console.log('addDimensions()')
     for (var d = 0; d < queryResponse.fields.dimension_like.length; d++) {
       this.dimensions.push({
         name: queryResponse.fields.dimension_like[d].name,

@@ -4,7 +4,8 @@ import { scaleOrdinal } from 'd3-scale';
 import { schemeAccent } from 'd3-scale-chromatic';
 import { forceSimulation, forceManyBody, forceX, forceY, forceCollide } from 'd3-force';
 
-import { VisPluginModel, getConfigOptions } from "../../vis-tools/vis_plugin.js";
+// import { VisPluginModel, getConfigOptions } from "../../vis-tools/vis_plugin.js";
+import { VisPluginModel, getConfigOptions } from "./utilities/vis-plugin.js";
 
 import './force-bubbles.css';
 
@@ -23,10 +24,11 @@ const visOptions = {
 }
 
 const buildVis = function(visModel, width, height) {
+  console.log('buildVis()')
   var visData = visModel.getJson(true, visModel.has_pivots)
   const colorScale = scaleOrdinal().range(schemeAccent)
 
-  const geo = true
+  const geo = false
 
   if (geo) {
     var minR = 0.7
@@ -274,6 +276,9 @@ looker.plugins.visualizations.add({
     // 2. Register options
     // 3. Build vis
 
+    console.log('data', data)
+    console.log('config', config)
+    console.log('queryResponse', queryResponse)
     var visModel = new VisPluginModel(data, config, queryResponse)
     
     var pluginSettings = {
