@@ -26,13 +26,23 @@ const buildVis = function(visModel, width, height) {
   var visData = visModel.getJson(true, visModel.has_pivots)
   const colorScale = scaleOrdinal().range(schemeAccent)
 
+  const geo = true
+
+  if (geo) {
+    var minR = 0.7
+    var defaultR = 4
+  } else {
+    var minR = 5
+    var defaultR = 45
+  }
+
   const calcSize = (value) => {
     if (typeof visModel.config.sizeBy !== 'undefined') {
       var max = visModel.ranges[visModel.config.sizeBy].max
       var scale = visModel.config.scale
-      return Math.floor(5 + (value / max * 45 * scale))
+      return Math.floor(minR + (value / max * defaultR * scale))
     } else {
-      return 20
+      return defaultR / 2
     }
   }
   
@@ -47,21 +57,59 @@ const buildVis = function(visModel, width, height) {
     }
   }
 
+  
+
+  const calcForceX = (d) => {
+    if (geo) {
+      var x = d['users.location'][1]
+    } else {
+      var x = calcX(d[visModel.config.groupBy])
+    }
+    console.log('x', x)
+    return x
+  }
+
+  const calcForceY = (d) => {
+    if (geo) {
+      var y = 70 - d['users.location'][0]
+    } else {
+      var y = height / 2
+    }
+    console.log('y', y)
+    return y
+  }
+
+  const calcForceCharge = () => {
+    if (geo) {
+      return 0
+    } else {
+      return 5
+    }
+  }
+
   const simulation = forceSimulation(visData)
-    .force('charge', forceManyBody().strength(5))
-    .force('forceX', forceX(d => calcX(d[visModel.config.groupBy])))
-    .force('forceY', forceY(height / 2))
+    .force('charge', forceManyBody().strength(d => calcForceCharge()))
+    .force('forceX', forceX(d => calcForceX(d)))
+    .force('forceY', forceY(d => calcForceY(d)))
     .force('collision', forceCollide().radius(d => calcSize(d[visModel.config.sizeBy])))
     .stop()
 
   if (typeof visModel.config.sizeBy !== 'undefined' && typeof visModel.config.groupBy !== 'undefined') {
-    for (var i = 0, n = Math.ceil(Math.log(simulation.alphaMin()) / Math.log(1 - simulation.alphaDecay())); i < n; ++i) {
+    console.log('n', Math.ceil(Math.log(simulation.alphaMin()) / Math.log(1 - simulation.alphaDecay())))
+    for (var i = 0, n = 200; i < n; ++i) {
       simulation.tick();
     }
+
+    if (geo) {
+      var viewbox = '-8 49 10 10'
+    } else {
+      var viewbox = '0 0 ' + width + ' ' + height
+    } 
 
     var svg = select('#visSvg')
       .attr("width", width)
       .attr("height", height)
+      .attr('viewBox', viewbox)
       .selectAll('circle')
         .data(visData, d => d.lookerId) 
 
@@ -114,33 +162,44 @@ const buildVis = function(visModel, width, height) {
       })
     })
 
-    var labels = select('#visSvg')
+    if (!geo) {
+      var labels = select('#visSvg')
       .selectAll('text')
         .data(categoricals, d => d.id) 
 
-    labels.enter()
-      .append('text')
-        .attr('x', d => calcX(d.value))
-        .attr('y', 20)
-        .attr('text-anchor', 'middle')
-        // .text(d => d.value)
-        .selectAll('tspan')
-          .data(d => d.value.split(' ')).enter()
-            .append('tspan')
-            .attr('class', 'label')
-            .attr('x', function(d) { return select(this.parentNode).attr('x')})
-            .attr('dy', 16)
-            .text(d => d)
+      labels.enter()
+        .append('text')
+          .attr('x', d => calcX(d.value))
+          .attr('y', 20)
+          .attr('text-anchor', 'middle')
+          // .text(d => d.value)
+          .selectAll('tspan')
+            .data(d => {
+              if (typeof d.value === 'string') {
+                return d.value.split(' ')
+              } else if (Array.isArray(d.value)) {
+                return d.value
+              } else {
+                return [d.value]
+              }
+            }).enter()
+              .append('tspan')
+              .attr('class', 'label')
+              .attr('x', function(d) { return select(this.parentNode).attr('x')})
+              .attr('dy', 16)
+              .text(d => d)
     
-    labels.transition()
-      .attr('x', d => calcX(d.value))
-      .on('end', d => {
-        selectAll('tspan')
-          .transition()
-          .attr('x', function(d) { return select(this.parentNode).attr('x') })
-      })
+          labels.transition()
+            .attr('x', d => calcX(d.value))
+            .on('end', d => {
+              selectAll('tspan')
+                .transition()
+                .attr('x', function(d) { return select(this.parentNode).attr('x') })
+            })
+          
+          labels.exit().remove()
+    }
     
-    labels.exit().remove()
      
     // ensure unique categories in different fields by joining field name to field value
     var colorBys = []
