@@ -68,6 +68,7 @@ class VisPluginModel {
    * @param {*} queryResponse 
    */
   constructor(sourceData, config, queryResponse) {
+    this.config = config
     this.columns = []
     this.dimensions = []
     this.measures = []

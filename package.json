@@ -13,7 +13,8 @@
     "webpack-cli": "^3.3.11"
   },
   "scripts": {
-    "build": "webpack"
+    "build": "webpack",
+    "watch": "webpack  --watch --progress"
   },
   "dependencies": {
     "d3-force": "^2.0.1",
