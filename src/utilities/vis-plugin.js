@@ -302,8 +302,7 @@ class VisPluginModel {
     if (!this.has_pivots || !melt) {
       this.data.forEach(r => {
         var row = {}
-        this.columns
-          .filter(c => !c.hide).forEach(c => {
+        this.columns.forEach(c => {
             row[c.id] = r.data[c.id].value
           })
         if (includeRowId) {
