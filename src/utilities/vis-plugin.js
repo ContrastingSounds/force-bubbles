@@ -262,10 +262,11 @@ class VisPluginModel {
 
   buildRows(sourceData) {
     sourceData.forEach(sourceRow => {
-      var row = new Row() // TODO: consider creating the row object once all required field values identified
+      var row = new Row()
       
-      // flatten data, if pivoted. Looker's data structure is nested for pivots (to a single level, no matter how many pivots)
+      
       for (var c = 0; c < this.columns.length; c++) {
+        // flatten data, if pivoted. Looker's data structure is nested for pivots (to a single level, no matter how many pivots)
         var column = this.columns[c]
         if (column.pivoted) {
           row.data[column.id] = sourceRow[column.field_name][column.pivot_key]
@@ -273,6 +274,7 @@ class VisPluginModel {
           row.data[column.id] = sourceRow[column.id]
         }
 
+        // build ranges object (mix/max for measures, unique values for dimensions)
         if (typeof row.data[column.id] !== 'undefined') {
           if (column.type === 'measure') {
             var current_min = this.ranges[column.field_name].min
@@ -289,10 +291,6 @@ class VisPluginModel {
               current_set.push(row_value)
             }
           }
-
-          // if (typeof row.data[column.id].cell_style === 'undefined') {
-          //   row.data[column.id].cell_style = []
-          // }
         }
       }
 
