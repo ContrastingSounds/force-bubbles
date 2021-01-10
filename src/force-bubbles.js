@@ -95,7 +95,7 @@ const ForceBubbles = (props) => {
             .attr('text-anchor', 'middle')
             // .text(d => d.value)
             .selectAll('tspan')
-              .data(d => d.value.split(' ')).enter()
+              .data(d => typeof d.value === 'string' ? d.value.split(' ') : [d.value]).enter()
                 .append('tspan')
                 .attr('class', 'label')
                 .attr('x', function(d) { return select(this.parentNode).attr('x')})
