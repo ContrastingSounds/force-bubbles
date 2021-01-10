@@ -8,14 +8,6 @@ const pluginDefaults = {
   sizeBy: false,
 }
 
-const newArray = function(length, value) {
-  var arr = []
-  for (var l = 0; l < length; l++) {
-    arr.push(value)
-  }
-  return arr
-}
-
 /**
  * Represents a row in the dataset that populates the table.
  * @class
@@ -36,15 +28,13 @@ class Row {
 class Column {
   constructor(id) {
     this.id = id
-    this.label = '' // queryResponse.fields.measures[n].label_short
-    this.view = '' // queryResponse.fields.measures[n].view_label
-    this.levels = []
-    this.field = {} // Looker field definition
+    this.label = ''
+    this.view = ''
     this.field_name = ''
     this.type = '' // dimension | measure
     this.pivoted = false
     this.super = false
-    this.pivot_key = '' // queryResponse.pivots[n].key // single string that concats all pivot values
+    this.pivot_key = ''
   }
 }
 
@@ -67,7 +57,6 @@ class VisPluginModel {
    * @param {*} queryResponse 
    */
   constructor(sourceData, config, queryResponse) {
-    this.config = config
     this.columns = []
     this.dimensions = []
     this.measures = []
@@ -123,11 +112,9 @@ class VisPluginModel {
       }
 
       var column = new Column(dimension.name)
-      column.levels = newArray(queryResponse.fields.pivots.length, '') // populate empty levels when pivoted
-      column.field = dimension
       column.field_name = dimension.name
-      column.label = column.field.label_short || column.field.label
-      column.view = column.field.view_label
+      column.label = dimension.label_short || dimension.label
+      column.view = dimension.view_label
       column.type = 'dimension'
       column.pivoted = false
       column.super = false
@@ -143,7 +130,6 @@ class VisPluginModel {
   }
 
   addMeasures(config, queryResponse) {
-    // add measures, list of ids
     queryResponse.fields.measure_like.forEach(measure => {
       this.measures.push({
         name: measure.name,
@@ -162,21 +148,18 @@ class VisPluginModel {
     if (this.has_pivots) {
       this.pivot_values.forEach(pivot_value => {
         this.measures.forEach(measure => {
-          var include_measure = (                                     // for pivoted measures, skip table calcs for row totals
-            pivot_value['key'] !== '$$$_row_total_$$$'        // if user wants a row total for table calc, must define separately
+          var include_measure = (                          // for pivoted measures, skip table calcs for row totals
+            pivot_value['key'] !== '$$$_row_total_$$$'     // if user wants a row total for table calc, must define separately
           ) || (
             pivot_value['key'] === '$$$_row_total_$$$' 
             && !measure.is_table_calculation
           )
 
           if (include_measure) {
-            var columnId = pivot_value['key'] + '.' + measure.name
-
-            var column = new Column(columnId)
-            column.field = measure
+            var column = new Column(pivot_value['key'] + '.' + measure.name)
             column.field_name = measure.name
-            column.label = column.field.label_short || column.field.label
-            column.view = column.field.view_label
+            column.label = measure.label_short || measure.label
+            column.view = measure.view_label
             column.type = 'measure'
             column.pivoted = true
             column.super = false
@@ -190,12 +173,9 @@ class VisPluginModel {
       // noticeably simpler for flat tables!
       this.measures.length.forEach(measure => {
         var column = new Column(measure.name)
-        console.log('addMeasures() col.id', column.id)
-
-        column.field = measure
         column.field_name = measure.name
-        column.label = column.field.label_short || column.field.label
-        column.view = column.field.view_label
+        column.label = measure.label_short || measure.label
+        column.view = measure.view_label
         column.type = 'measure'
         column.pivoted = false
         column.super = false
@@ -204,34 +184,31 @@ class VisPluginModel {
     }
     
     // add supermeasures, if present
-    if (typeof queryResponse.fields.supermeasure_like !== 'undefined') {
-      for (var s = 0; s < queryResponse.fields.supermeasure_like.length; s++) {
-        var column_name = queryResponse.fields.supermeasure_like[s].name
+    if (this.has_supers) {
+      queryResponse.fields.supermeasure_like.forEach(supermeasure => {
+        var column_name = supermeasure.name
         this.measures.push({
-          name: queryResponse.fields.supermeasure_like[s].name,
-          label: queryResponse.fields.supermeasure_like[s].label,
+          name: supermeasure.name,
+          label: supermeasure.label,
           view: '',
         }) 
 
         var column = new Column(column_name)
-        column.levels = newArray(queryResponse.fields.pivots.length, '')
-        column.field = queryResponse.fields.supermeasure_like[s]
-        column.field_name = queryResponse.fields.supermeasure_like[s].name
-        column.label = column.field.label_short || column.field.label
-        column.view = column.field.view_label
+        column.field_name = supermeasure.name
+        column.label = supermeasure.label_short || supermeasure.label
+        column.view = supermeasure.view_label
         column.type = 'measure'
         column.pivoted = false
         column.super = true
 
         this.columns.push(column)
-      }
+      })
     }
   }
 
   buildRows(sourceData) {
     sourceData.forEach(sourceRow => {
       var row = new Row()
-      
       
       for (var c = 0; c < this.columns.length; c++) {
         // flatten data, if pivoted. Looker's data structure is nested for pivots (to a single level, no matter how many pivots)
@@ -325,11 +302,11 @@ const getConfigOptions = function(visModel, optionChoices=pluginDefaults, baseOp
 
   if (optionChoices.sizeBy) {
     var sizeByOptions = [];
-    for (var i = 0; i < visModel.measures.length; i++) {
+    visModel.measures.forEach(measure => {
         var option = {};
-        option[visModel.measures[i].label] = visModel.measures[i].name;
+        option[measure.label] = measure.name;
         sizeByOptions.push(option);
-    }
+    })
   
     newOptions["sizeBy"] = {
         section: " Visualization",
@@ -347,17 +324,18 @@ const getConfigOptions = function(visModel, optionChoices=pluginDefaults, baseOp
   // - by pivot key (which are also dimensions)
   // - by pivot series (one color per column)
   var colorByOptions = [];
-  for (var i = 0; i < visModel.dimensions.length; i++) {
-      var option = {};
-      option[visModel.dimensions[i].label] = visModel.dimensions[i].name;
-      colorByOptions.push(option)
-  }
 
-  for (var i = 0; i < visModel.pivot_fields.length; i++) {
+  visModel.dimensions.forEach(dimension => {
+      var option = {};
+      option[dimension.label] = dimension.name;
+      colorByOptions.push(option)
+  })
+
+  visModel.pivot_fields.forEach(pivot_field => {
     var option = {};
-    option[visModel.pivot_fields[i].label] = visModel.pivot_fields[i].name;
+    option[pivot_field.label] = pivot_field.name;
     colorByOptions.push(option)
-  }
+  })
 
   if (visModel.pivot_fields.length > 1 ) {
     colorByOptions.push({'Pivot Series': 'lookerPivotKey'})

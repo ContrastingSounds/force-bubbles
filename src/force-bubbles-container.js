@@ -25,30 +25,26 @@ looker.plugins.visualizations.add({
   options: visOptions,
 
   create: function(element, config) {
-    console.log('create() config', config)
     this.chart = ReactDOM.render(<div />, element);
   },
 
   updateAsync: function(data, element, config, queryResponse, details, done) {
-    console.log('data', data)
-    console.log('config', config)
-    console.log('queryResponse', queryResponse)
+    // console.log('data', data)
+    // console.log('config', config)
+    // console.log('queryResponse', queryResponse)
 
     // ERROR HANDLING
-
     this.clearErrors();
-
 
     // INITIALISE THE VIS
 
-
     // BUILD THE VIS
-    // 1. Create object
+    // 1. Create model object
     // 2. Register options
     // 3. Build vis
 
     var visModel = new VisPluginModel(data, config, queryResponse)
-    console.log('visModel', visModel)
+    // console.log('visModel', visModel)
     
     var pluginSettings = {
       dimensionLabels: true,
@@ -65,12 +61,6 @@ looker.plugins.visualizations.add({
     const visData = visModel.getJson(true, visModel.has_pivots)
     const ranges = visModel.ranges
 
-    console.log('config', config)
-    console.log('data', visData)
-    console.log('ranges', ranges)
-    console.log('width', element.clientWidth)
-    console.log('height', element.clientHeight)
-
     this.chart = ReactDOM.render(
       <ForceBubbles
         colorBy={config.colorBy}
@@ -86,7 +76,7 @@ looker.plugins.visualizations.add({
     );
 
     // DEBUG OUTPUT AND DONE
-    console.log('element', element)
+    // console.log('element', element)
     done();
   }
 })

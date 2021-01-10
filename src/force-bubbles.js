@@ -45,7 +45,6 @@ const ForceBubbles = (props) => {
 
   useEffect(
     () => {
-      console.log('useEffect()')
       if (typeof props !== 'undefined' && typeof props.data !== 'undefined' && d3Container.current !== null) {
         for (var i = 0, n = Math.ceil(Math.log(simulation.alphaMin()) / Math.log(1 - simulation.alphaDecay())); i < n; ++i) {
           simulation.tick();
@@ -83,17 +82,13 @@ const ForceBubbles = (props) => {
     
         var labels = select(d3Container.current)
           .selectAll('text')
-            .data(categoricals, d => {
-              console.log('select text for', d.value)
-              return d.id
-            }) 
+            .data(categoricals, d => d.id) 
     
         labels.enter()
           .append('text')
             .attr('x', d => calcX(d.value))
             .attr('y', 20)
             .attr('text-anchor', 'middle')
-            // .text(d => d.value)
             .selectAll('tspan')
               .data(d => typeof d.value === 'string' ? d.value.split(' ') : [d.value]).enter()
                 .append('tspan')
@@ -140,7 +135,6 @@ const ForceBubbles = (props) => {
     
         rects.exit().remove()
     
-        console.log('svg keys for legend')
         var keys = select(d3Container.current)
           .selectAll('.legendKey')
             .data(colorBys, d => d.id)
