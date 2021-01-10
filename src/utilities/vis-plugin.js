@@ -112,20 +112,20 @@ class VisPluginModel {
   }
 
   addDimensions(config, queryResponse) {
-    for (var d = 0; d < queryResponse.fields.dimension_like.length; d++) {
+    queryResponse.fields.dimension_like.forEach(dimension => {
       this.dimensions.push({
-        name: queryResponse.fields.dimension_like[d].name,
-        label: queryResponse.fields.dimension_like[d].label_short || queryResponse.fields.dimension_like[d].label,
-        view: queryResponse.fields.dimension_like[d].view_label || '',
+        name: dimension.name,
+        label: dimension.label_short || dimension.label,
+        view: dimension.view_label || '',
       })
-      this.ranges[queryResponse.fields.dimension_like[d].name] = {
+      this.ranges[dimension.name] = {
         set: [],
       }
 
-      var column = new Column(queryResponse.fields.dimension_like[d].name) // TODO: consider creating the column object once all required field values identified
+      var column = new Column(dimension.name)
       column.levels = newArray(queryResponse.fields.pivots.length, '') // populate empty levels when pivoted
-      column.field = queryResponse.fields.dimension_like[d]
-      column.field_name = queryResponse.fields.dimension_like[d].name
+      column.field = dimension
+      column.field_name = dimension.name
       column.label = column.field.label_short || column.field.label
       column.view = column.field.view_label
       column.type = 'dimension'
@@ -139,7 +139,7 @@ class VisPluginModel {
       }
 
       this.columns.push(column)
-    }
+    })
   }
 
   addMeasures(config, queryResponse) {
