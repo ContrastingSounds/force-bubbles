@@ -88,7 +88,7 @@ class VisPluginModel {
     this.addDimensions(config, queryResponse)
     this.addMeasures(config, queryResponse)
     this.buildRows(sourceData)
-    this.applyFormatting(config)  
+    // this.applyFormatting(config)  
   }
 
   addPivots(queryResponse) {
@@ -307,40 +307,40 @@ class VisPluginModel {
     }
   }
 
-  /**
-   * Applies conditional formatting (red if negative) to all measure columns set to use it 
-   */
-  applyFormatting(config) {
-    for (var c = 0; c < this.columns.length; c++) {
-      var col = this.columns[c]
-      if (typeof config['style|' + col.id] !== 'undefined') {
-        if (config['style|' + col.id] == 'black_red') {
-          for (var r = 0; r < this.data.length; r++) {
-            var row = this.data[r]
-            if (row.data[col.id].value < 0) {
-              row.data[col.id].cell_style.push('red')
-            }
-          }
-        }
-      }
-    }
-  }
+  // /**
+  //  * Applies conditional formatting (red if negative) to all measure columns set to use it 
+  //  */
+  // applyFormatting(config) {
+  //   for (var c = 0; c < this.columns.length; c++) {
+  //     var col = this.columns[c]
+  //     if (typeof config['style|' + col.id] !== 'undefined') {
+  //       if (config['style|' + col.id] == 'black_red') {
+  //         for (var r = 0; r < this.data.length; r++) {
+  //           var row = this.data[r]
+  //           if (row.data[col.id].value < 0) {
+  //             row.data[col.id].cell_style.push('red')
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 
-  getDimensionByName(name) {
-    this.dimensions.forEach(d => {
-      if (d.name === name) {
-        return d
-      }
-    })
-  }
+  // getDimensionByName(name) {
+  //   this.dimensions.forEach(d => {
+  //     if (d.name === name) {
+  //       return d
+  //     }
+  //   })
+  // }
 
-  getMeasureByName(name) {
-    this.measures.forEach(m => {
-      if (m.name === name) {
-        return m
-      }
-    })
-  }
+  // getMeasureByName(name) {
+  //   this.measures.forEach(m => {
+  //     if (m.name === name) {
+  //       return m
+  //     }
+  //   })
+  // }
 
   /**
    * Returns dataset as a simple json object
