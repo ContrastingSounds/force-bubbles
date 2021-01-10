@@ -97,7 +97,7 @@ looker.plugins.visualizations.add({
     );
 
     // DEBUG OUTPUT AND DONE
-    console.log('container', this.container)
+    console.log('element', element)
     done();
   }
 })
