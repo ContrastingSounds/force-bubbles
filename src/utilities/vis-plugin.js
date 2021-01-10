@@ -45,7 +45,6 @@ class Column {
     this.pivoted = false
     this.super = false
     this.pivot_key = '' // queryResponse.pivots[n].key // single string that concats all pivot values
-    this.hide = false
   }
 }
 
@@ -222,11 +221,6 @@ class VisPluginModel {
         column.super = false
         this.columns.push(column)
 
-        if (typeof config['style|' + column.id] !== 'undefined') {
-          if (config['style|' + column.id] === 'hide') {
-            column.hide = true
-          }
-        }
       }
     }
     
@@ -250,11 +244,6 @@ class VisPluginModel {
         column.pivoted = false
         column.super = true
 
-        if (typeof config['style|' + column.id] !== 'undefined') {
-          if (config['style|' + column.id] === 'hide') {
-            column.hide = true
-          }
-        }
         this.columns.push(column)
       }
     }
@@ -330,13 +319,11 @@ class VisPluginModel {
             row[pivot_value] = p.data[pivot_value]
           }
           this.columns // 'flat fields' i.e. dimensions and supermeasures
-            .filter(c => !c.hide)
             .filter(c => c.type === 'dimension' || c.super)
             .forEach(c => {
               row[c.id] = r.data[c.id].value
             })
           this.columns // 'pivoted fields' i.e. measures
-            .filter(c => !c.hide)
             .filter(c => c.pivoted)
             .forEach(c => {
               var valueRef = p.key + '.' + c.field_name
@@ -357,51 +344,6 @@ class VisPluginModel {
 const getConfigOptions = function(visModel, optionChoices=pluginDefaults, baseOptions={}) {
   var optionChoices = {...pluginDefaults, ...optionChoices} 
   var newOptions = baseOptions
-
-  for (var i = 0; i < visModel.dimensions.length; i++) {
-    if (optionChoices.dimensionLabels) {
-      newOptions['label|' + visModel.dimensions[i].name] = {
-        section: 'Dimensions',
-        type: 'string',
-        label: visModel.dimensions[i].label,
-        default: visModel.dimensions[i].label,
-        order: i * 10 + 1,
-      }
-    }
-
-    if (optionChoices.dimensionHide) {
-      newOptions['hide|' + visModel.dimensions[i].name] = {
-        section: 'Dimensions',
-        type: 'boolean',
-        label: 'Hide',
-        display_size: 'third',
-        order: i * 10 + 2,
-      }
-    }
-  }
-
-  for (var i = 0; i < visModel.measures.length; i++) {
-    if (optionChoices.measureLabels) {
-      newOptions['label|' + visModel.measures[i].name] = {
-        section: 'Measures',
-        type: 'string',
-        label: visModel.measures[i].label_short || visModel.measures[i].label,
-        default: visModel.measures[i].label_short || visModel.measures[i].label,
-        order: 100 + i * 10 + 1,
-      }
-    }
-
-    if (optionChoices.measureStyles.length > 0) {
-      newOptions['style|' + visModel.measures[i].name] = {
-        section: 'Measures',
-        type: 'string',
-        label: 'Style',
-        display: 'select',
-        values: optionChoices.measureStyles,
-        order: 100 + i * 10 + 2
-      }
-    }
-  }
 
   if (optionChoices.sizeBy) {
     var sizeByOptions = [];
