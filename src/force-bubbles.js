@@ -13,9 +13,9 @@ const ForceBubbles = (props) => {
   const d3Container = useRef(null);
   
   const calcSize = (value) => {
-    if (typeof props.config.sizeBy !== 'undefined') {
-      var max = props.ranges[props.config.sizeBy].max
-      var scale = props.config.scale
+    if (typeof props.sizeBy !== 'undefined') {
+      var max = props.ranges[props.sizeBy].max
+      var scale = props.scale
       return Math.floor(5 + (value / max * 45 * scale))
     } else {
       return 20
@@ -23,8 +23,8 @@ const ForceBubbles = (props) => {
   }
   
   const calcX = (value) => {
-    if (typeof props.config.groupBy !== 'undefined') {
-      var range = props.ranges[props.config.groupBy]
+    if (typeof props.groupBy !== 'undefined') {
+      var range = props.ranges[props.groupBy]
       var catWidth = range.set.length + 1
       var catIndex = range.set.indexOf(value) + 1
       return props.width / catWidth * catIndex
@@ -37,9 +37,9 @@ const ForceBubbles = (props) => {
 
   const simulation = forceSimulation(props.data)
     .force('charge', forceManyBody().strength(5))
-    .force('forceX', forceX(d => calcX(d[props.config.groupBy])))
+    .force('forceX', forceX(d => calcX(d[props.groupBy])))
     .force('forceY', forceY(props.height / 2))
-    .force('collision', forceCollide().radius(d => calcSize(d[props.config.sizeBy])))
+    .force('collision', forceCollide().radius(d => calcSize(d[props.sizeBy])))
     .stop()
 
 
@@ -58,25 +58,25 @@ const ForceBubbles = (props) => {
         circles.enter()
           .append('circle')
             .classed('bubble', true)
-            .attr('r', d => calcSize(d[props.config.sizeBy]))
+            .attr('r', d => calcSize(d[props.sizeBy]))
             .attr('cx', d => d.x)
             .attr('cy', d => d.y)
-            .style('fill', d => colorScale(d[props.config.colorBy]))
+            .style('fill', d => colorScale(d[props.colorBy]))
     
         circles.transition()
           .duration(250)
-            .attr('r', d => calcSize(d[props.config.sizeBy]))
+            .attr('r', d => calcSize(d[props.sizeBy]))
             .attr('cx', d =>  d.x)
             .attr('cy', d => d.y)
-            .style('fill', d => colorScale(d[props.config.colorBy]))
+            .style('fill', d => colorScale(d[props.colorBy]))
       
         circles.exit().remove()
     
         // ensure unique categories in different fields by joining field name to field value
         var categoricals = []
-        props.ranges[props.config.groupBy].set.forEach(categorical => {
+        props.ranges[props.groupBy].set.forEach(categorical => {
           categoricals.push({
-            id: ['group', props.config.groupBy, categorical].join('.'),
+            id: ['group', props.groupBy, categorical].join('.'),
             value: categorical
           })
         })
@@ -114,9 +114,9 @@ const ForceBubbles = (props) => {
           
         // ensure unique categories in different fields by joining field name to field value
         var colorBys = []
-        props.ranges[props.config.colorBy].set.forEach(colorBy => {
+        props.ranges[props.colorBy].set.forEach(colorBy => {
           colorBys.push({
-            id: ['color', props.config.colorBy, colorBy].join('.'),
+            id: ['color', props.colorBy, colorBy].join('.'),
             value: colorBy
           })
         })

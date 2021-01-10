@@ -62,20 +62,6 @@ looker.plugins.visualizations.add({
     }
     this.trigger('registerOptions', getConfigOptions(visModel, pluginSettings, visOptions))
 
-    // TODO: what props are necessary for ForceBubbles?
-       // var visData = visModel.getJson(true, visModel.has_pivots)
-       // visModel.config (groupBy, sizeBy, colorBy)
-       // .html(visModel.getTooltipFromD3(d))
-       // visModel.ranges
-    // TODO: Split out vis between D3 bit and e.g. legend (legend def. best done in React!)
-    //            vis in D3 or React depending on best practice
-
-    // Flow
-    // data, config, queryResponse
-    // convert data into simple json array for vis
-    // calculate ranges
-    // 
-
     const visData = visModel.getJson(true, visModel.has_pivots)
     const ranges = visModel.ranges
 
@@ -87,7 +73,10 @@ looker.plugins.visualizations.add({
 
     this.chart = ReactDOM.render(
       <ForceBubbles
-        config={config}
+        colorBy={config.colorBy}
+        groupBy={config.groupBy}
+        sizeBy={config.sizeBy}
+        scale={config.scale}
         data={visData}
         ranges={ranges}
         width={element.clientWidth}

@@ -261,16 +261,16 @@ class VisPluginModel {
   }
 
   buildRows(sourceData) {
-    for (var i = 0; i < sourceData.length; i++) {
+    sourceData.forEach(sourceRow => {
       var row = new Row() // TODO: consider creating the row object once all required field values identified
       
       // flatten data, if pivoted. Looker's data structure is nested for pivots (to a single level, no matter how many pivots)
       for (var c = 0; c < this.columns.length; c++) {
         var column = this.columns[c]
         if (column.pivoted) {
-          row.data[column.id] = sourceData[i][column.field_name][column.pivot_key]
+          row.data[column.id] = sourceRow[column.field_name][column.pivot_key]
         } else {
-          row.data[column.id] = sourceData[i][column.id]
+          row.data[column.id] = sourceRow[column.id]
         }
 
         if (typeof row.data[column.id] !== 'undefined') {
@@ -290,58 +290,19 @@ class VisPluginModel {
             }
           }
 
-          if (typeof row.data[column.id].cell_style === 'undefined') {
-            row.data[column.id].cell_style = []
-          }
+          // if (typeof row.data[column.id].cell_style === 'undefined') {
+          //   row.data[column.id].cell_style = []
+          // }
         }
       }
 
-      // set a unique id for the row
-      var all_dims = []
-      for (var d = 0; d < this.dimensions.length; d++) {
-        all_dims.push(sourceData[i][this.dimensions[d].name].value)
-      }
-      row.id = all_dims.join('|')
+      row.id = this.dimensions.map(dim => sourceRow[dim.name].value).join('|')
 
       this.data.push(row)
-    }
+    })
   }
 
-  // /**
-  //  * Applies conditional formatting (red if negative) to all measure columns set to use it 
-  //  */
-  // applyFormatting(config) {
-  //   for (var c = 0; c < this.columns.length; c++) {
-  //     var col = this.columns[c]
-  //     if (typeof config['style|' + col.id] !== 'undefined') {
-  //       if (config['style|' + col.id] == 'black_red') {
-  //         for (var r = 0; r < this.data.length; r++) {
-  //           var row = this.data[r]
-  //           if (row.data[col.id].value < 0) {
-  //             row.data[col.id].cell_style.push('red')
-  //           }
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
-
-  // getDimensionByName(name) {
-  //   this.dimensions.forEach(d => {
-  //     if (d.name === name) {
-  //       return d
-  //     }
-  //   })
-  // }
-
-  // getMeasureByName(name) {
-  //   this.measures.forEach(m => {
-  //     if (m.name === name) {
-  //       return m
-  //     }
-  //   })
-  // }
-
+  
   /**
    * Returns dataset as a simple json object
    * Includes line_items only (e.g. no row subtotals)
