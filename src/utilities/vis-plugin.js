@@ -75,48 +75,40 @@ class VisPluginModel {
     this.data = []
     this.pivot_fields = []
     this.pivot_values = []
-    this.has_pivots = false
+    this.has_pivots = typeof queryResponse.pivots === 'undefined' ? false : true
+    this.has_supers = typeof queryResponse.fields.supermeasure_like === 'undefined' ? false : true
     
-    if (typeof queryResponse.fields.supermeasure_like !== 'undefined') {
-      this.has_supers = true
-    } else {
-      this.has_supers = false
+    if (this.has_pivots) {
+      this.addPivots(queryResponse)
     }
-
-    this.addPivots(queryResponse)
     this.addDimensions(config, queryResponse)
     this.addMeasures(config, queryResponse)
     this.buildRows(sourceData)
-    // this.applyFormatting(config)  
   }
 
   addPivots(queryResponse) {
-    if (typeof queryResponse.pivots !== 'undefined') {
-      for (var p = 0; p < queryResponse.fields.pivots.length; p++) { 
-        this.pivot_fields.push({
-          name: queryResponse.fields.pivots[p].name,
-          label: queryResponse.fields.pivots[p].label_short || queryResponse.fields.pivots[p].label,
-          view: queryResponse.fields.pivots[p].view_label || '',
-        }) 
-        this.ranges[queryResponse.fields.pivots[p].name] = {set : []}
-      }
-      
-      this.pivot_values = queryResponse.pivots
-      this.ranges['lookerPivotKey'] = {set: []}
+    queryResponse.fields.pivots.forEach(pivot => {
+      this.pivot_fields.push({
+        name: pivot.name,
+        label: pivot.label_short || pivot.label,
+        view: pivot.view_label || '',
+      }) 
+      this.ranges[pivot.name] = {set : []}
+    })
+    
+    this.ranges['lookerPivotKey'] = {set: []}
+    this.pivot_values = queryResponse.pivots
+    this.pivot_values.forEach(pivot_value => {
+      this.ranges['lookerPivotKey'].set.push(pivot_value.key)
 
-      for (var p = 0; p < this.pivot_values.length; p++) {
-        this.ranges['lookerPivotKey'].set.push(this.pivot_values[p].key)
-
-        for (var key in this.pivot_values[p].data) {
-          var current_set = this.ranges[key].set
-          var row_value = this.pivot_values[p].data[key]
-          if (current_set.indexOf(row_value) === -1) {
-            current_set.push(row_value)
-          }
-        } 
-      }
-      this.has_pivots = true
-    }
+      for (var key in pivot_value.data) {
+        var current_set = this.ranges[key].set
+        var row_value = pivot_value.data[key]
+        if (current_set.indexOf(row_value) === -1) {
+          current_set.push(row_value)
+        }
+      } 
+    })
   }
 
   addDimensions(config, queryResponse) {
