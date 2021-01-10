@@ -47,26 +47,15 @@ const ForceBubbles = (props) => {
     () => {
       console.log('useEffect()')
       if (typeof props !== 'undefined' && typeof props.data !== 'undefined' && d3Container.current !== null) {
-        
-        console.log('ForceBubbles() props', props)
-        console.log('d3Container', d3Container)
-
         for (var i = 0, n = Math.ceil(Math.log(simulation.alphaMin()) / Math.log(1 - simulation.alphaDecay())); i < n; ++i) {
           simulation.tick();
         }
-    
-        var svg = select(d3Container.current)
-        console.log('svg', svg)
-    
-        console.log('svg circles')
-        svg
+        
+        var circles = select(d3Container.current)
           .selectAll('circle')
-          .data(props.data, d => {
-            console.log('circle d', d)
-            return d.lookerId
-          }) 
+          .data(props.data, d => d.lookerId) 
     
-        svg.enter()
+        circles.enter()
           .append('circle')
             .classed('bubble', true)
             .attr('r', d => calcSize(d[props.config.sizeBy]))
@@ -74,18 +63,14 @@ const ForceBubbles = (props) => {
             .attr('cy', d => d.y)
             .style('fill', d => colorScale(d[props.config.colorBy]))
     
-        // svg.transition()
-        //   .duration(250)
-        //     .attr('r', d => {
-        //       console.log('r sizeBy', props.config.sizeBy)
-        //       console.log('r d', d)
-        //       return calcSize(d[props.config.sizeBy])
-        //     })
-        //     .attr('cx', d =>  d.x)
-        //     .attr('cy', d => d.y)
-        //     .style('fill', d => colorScale(d[props.config.colorBy]))
+        circles.transition()
+          .duration(250)
+            .attr('r', d => calcSize(d[props.config.sizeBy]))
+            .attr('cx', d =>  d.x)
+            .attr('cy', d => d.y)
+            .style('fill', d => colorScale(d[props.config.colorBy]))
       
-        // svg.exit().remove()
+        circles.exit().remove()
     
         // ensure unique categories in different fields by joining field name to field value
         var categoricals = []
@@ -96,10 +81,12 @@ const ForceBubbles = (props) => {
           })
         })
     
-        console.log('svg labels')
         var labels = select(d3Container.current)
           .selectAll('text')
-            .data(categoricals, d => d.id) 
+            .data(categoricals, d => {
+              console.log('select text for', d.value)
+              return d.id
+            }) 
     
         labels.enter()
           .append('text')
@@ -134,7 +121,6 @@ const ForceBubbles = (props) => {
           })
         })
     
-        console.log('svg rects for legend')
         var rects = select(d3Container.current)
           .selectAll('.legendRect')                     
             .data(colorBys, d => d.id)                                  
@@ -172,7 +158,6 @@ const ForceBubbles = (props) => {
     [props.data, d3Container.current]
   )
 
-  //       className='d3-component'
   return (
     <svg
       width={props.width}
