@@ -75,8 +75,8 @@ class VisPluginModel {
     this.data = []
     this.pivot_fields = []
     this.pivot_values = []
-    this.has_pivots = typeof queryResponse.pivots === 'undefined' ? false : true
-    this.has_supers = typeof queryResponse.fields.supermeasure_like === 'undefined' ? false : true
+    this.has_pivots = typeof queryResponse.pivots !== 'undefined'
+    this.has_supers = typeof queryResponse.fields.supermeasure_like !== 'undefined'
     
     if (this.has_pivots) {
       this.addPivots(queryResponse)
@@ -144,76 +144,63 @@ class VisPluginModel {
 
   addMeasures(config, queryResponse) {
     // add measures, list of ids
-    for (var m = 0; m < queryResponse.fields.measure_like.length; m++) {
+    queryResponse.fields.measure_like.forEach(measure => {
       this.measures.push({
-        name: queryResponse.fields.measure_like[m].name,
-        label: queryResponse.fields.measure_like[m].label_short || queryResponse.fields.measure_like[m].label,
-        view: queryResponse.fields.measure_like[m].view_label || '',
-        is_table_calculation: typeof queryResponse.fields.measure_like[m].is_table_calculation !== 'undefined',
+        name: measure.name,
+        label: measure.label_short || measure.label,
+        view: measure.view_label || '',
+        is_table_calculation: typeof measure.is_table_calculation !== 'undefined',
       }) 
-      this.ranges[queryResponse.fields.measure_like[m].name] = {
+
+      this.ranges[measure.name] = {
         min: 100000000,
         max: 0,
       }
-    }
+    })
     
     // add measures, list of full objects
     if (this.has_pivots) {
-      for (var p = 0; p < this.pivot_values.length; p++) {
-        for (var m = 0; m < this.measures.length; m++) {
+      this.pivot_values.forEach(pivot_value => {
+        this.measures.forEach(measure => {
           var include_measure = (                                     // for pivoted measures, skip table calcs for row totals
-            this.pivot_values[p]['key'] != '$$$_row_total_$$$'        // if user wants a row total for table calc, must define separately
+            pivot_value['key'] !== '$$$_row_total_$$$'        // if user wants a row total for table calc, must define separately
           ) || (
-            this.pivot_values[p]['key'] == '$$$_row_total_$$$' 
-            && this.measures[m].is_table_calculation == false
+            pivot_value['key'] === '$$$_row_total_$$$' 
+            && !measure.is_table_calculation
           )
 
           if (include_measure) {
-            var pivotKey = this.pivot_values[p]['key']
-            var measureName = this.measures[m].name
-            var columnId = pivotKey + '.' + measureName
-
-            var levels = [] // will contain a list of all the pivot values for this column
-            var level_sort_values = []
-            for (var pf = 0; pf < queryResponse.fields.pivots.length; pf++) { 
-              var pf_name = queryResponse.fields.pivots[pf].name
-              levels.push(this.pivot_values[p]['data'][pf_name])
-              level_sort_values.push(this.pivot_values[p]['sort_values'][pf_name]) 
-            }
+            var columnId = pivot_value['key'] + '.' + measure.name
 
             var column = new Column(columnId)
-            column.levels = levels
-            column.field = queryResponse.fields.measure_like[m]
-            column.field_name = queryResponse.fields.measure_like[m].name
+            column.field = measure
+            column.field_name = measure.name
             column.label = column.field.label_short || column.field.label
             column.view = column.field.view_label
             column.type = 'measure'
             column.pivoted = true
             column.super = false
-            column.pivot_key = pivotKey
-
-            // TODO: Hide function
+            column.pivot_key = pivot_value['key']
 
             this.columns.push(column)
           }
-        }
-      }
+        })
+      })
     } else {
       // noticeably simpler for flat tables!
-      for (var m = 0; m < this.measures.length; m++) {
-        var column = new Column(this.measures[m].name)
+      this.measures.length.forEach(measure => {
+        var column = new Column(measure.name)
         console.log('addMeasures() col.id', column.id)
 
-        column.field = queryResponse.fields.measure_like[m]
-        column.field_name = queryResponse.fields.measure_like[m].name
+        column.field = measure
+        column.field_name = measure.name
         column.label = column.field.label_short || column.field.label
         column.view = column.field.view_label
         column.type = 'measure'
         column.pivoted = false
         column.super = false
         this.columns.push(column)
-
-      }
+      })
     }
     
     // add supermeasures, if present
