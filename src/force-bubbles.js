@@ -1,4 +1,4 @@
-import { React, useEffect, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 
 import { select, selectAll, event } from 'd3-selection';
 import { transition } from 'd3-transition';
@@ -10,11 +10,8 @@ import './force-bubbles.css';
 
 
 const ForceBubbles = (props) => {
-  console.log('ForceBubbles()')
-
   const d3Container = useRef(null);
-  console.log('d3Container', d3Container)
-
+  
   const calcSize = (value) => {
     if (typeof props.config.sizeBy !== 'undefined') {
       var max = props.ranges[props.config.sizeBy].max
@@ -49,8 +46,11 @@ const ForceBubbles = (props) => {
   useEffect(
     () => {
       console.log('useEffect()')
-      if (typeof props.config.sizeBy !== 'undefined' && typeof props.config.groupBy !== 'undefined' && d3Container.current) {
-        console.log('endorsed!!')
+      if (typeof props !== 'undefined' && typeof props.data !== 'undefined' && d3Container.current !== null) {
+        
+        console.log('ForceBubbles() props', props)
+        console.log('d3Container', d3Container)
+
         for (var i = 0, n = Math.ceil(Math.log(simulation.alphaMin()) / Math.log(1 - simulation.alphaDecay())); i < n; ++i) {
           simulation.tick();
         }
@@ -61,7 +61,10 @@ const ForceBubbles = (props) => {
         console.log('svg circles')
         svg
           .selectAll('circle')
-          .data(props.data, d => d.lookerId) 
+          .data(props.data, d => {
+            console.log('circle d', d)
+            return d.lookerId
+          }) 
     
         svg.enter()
           .append('circle')
@@ -71,18 +74,22 @@ const ForceBubbles = (props) => {
             .attr('cy', d => d.y)
             .style('fill', d => colorScale(d[props.config.colorBy]))
     
-        svg.transition()
-          .duration(250)
-            .attr('r', d => calcSize(d[props.config.sizeBy]))
-            .attr('cx', d =>  d.x)
-            .attr('cy', d => d.y)
-            .style('fill', d => colorScale(d[props.config.colorBy]))
+        // svg.transition()
+        //   .duration(250)
+        //     .attr('r', d => {
+        //       console.log('r sizeBy', props.config.sizeBy)
+        //       console.log('r d', d)
+        //       return calcSize(d[props.config.sizeBy])
+        //     })
+        //     .attr('cx', d =>  d.x)
+        //     .attr('cy', d => d.y)
+        //     .style('fill', d => colorScale(d[props.config.colorBy]))
       
-        svg.exit().remove()
+        // svg.exit().remove()
     
         // ensure unique categories in different fields by joining field name to field value
         var categoricals = []
-        props.ranges[visModel.config.groupBy].set.forEach(categorical => {
+        props.ranges[props.config.groupBy].set.forEach(categorical => {
           categoricals.push({
             id: ['group', props.config.groupBy, categorical].join('.'),
             value: categorical
@@ -137,13 +144,13 @@ const ForceBubbles = (props) => {
             .attr('class', 'legendRect')                             
             .attr('width', 12)
             .attr('height', 12)
-            .attr('x', (width / 2) - 100)
+            .attr('x', (props.width / 2) - 100)
             .attr('y', (d, i) => props.height - (i + 1) * 20)
             .style('fill', d => colorScale(d.value))                            
         
         rects.transition()
           .duration(0)
-            .attr('x', (width / 2) - 100)
+            .attr('x', (props.width / 2) - 100)
     
         rects.exit().remove()
     
@@ -155,7 +162,7 @@ const ForceBubbles = (props) => {
         keys.enter()
           .append('text')
             .attr('class', 'legendKey')
-            .attr('x', (width / 2) - 85)
+            .attr('x', (props.width / 2) - 85)
             .attr('y', (d, i) => props.height + 10 - (i + 1) * 20)
             .text(d => d.value)
         
