@@ -1,13 +1,3 @@
-const pluginDefaults = {
-  dimensionLabels: true,
-  dimensionHide: false,
-  measureLabels: true,
-  measureStyles: [],
-  colorBy: false,
-  groupBy: false,
-  sizeBy: false,
-}
-
 /**
  * Represents a row in the dataset that populates the table.
  * @class
@@ -296,11 +286,28 @@ class VisPluginModel {
   }
 }
 
-const getConfigOptions = function(visModel, optionChoices=pluginDefaults, baseOptions={}) {
-  var optionChoices = {...pluginDefaults, ...optionChoices} 
-  var newOptions = baseOptions
+const getConfigOptions = function(visModel) {
+  var pluginSettings = {
+    colorBy: true,
+    groupBy: true,
+    sizeBy: true,
+  }
 
-  if (optionChoices.sizeBy) {
+  var visOptions = {
+    scale: {
+      section: ' Visualization',
+      type: 'number',
+      display: 'range',
+      label: 'Scale Size By',
+      default: 1.0,
+      min: 0.2,
+      max: 2.0,
+      step: 0.2,
+      order: 100000,
+    }
+  }
+
+  if (pluginSettings.sizeBy) {
     var sizeByOptions = [];
     visModel.measures.forEach(measure => {
         var option = {};
@@ -308,7 +315,7 @@ const getConfigOptions = function(visModel, optionChoices=pluginDefaults, baseOp
         sizeByOptions.push(option);
     })
   
-    newOptions["sizeBy"] = {
+    visOptions["sizeBy"] = {
         section: " Visualization",
         type: "string",
         label: "Size By",
@@ -323,26 +330,26 @@ const getConfigOptions = function(visModel, optionChoices=pluginDefaults, baseOp
   // - by dimension
   // - by pivot key (which are also dimensions)
   // - by pivot series (one color per column)
-  var colorByOptions = [];
+  if (pluginSettings.colorBy) {
+    var colorByOptions = [];
 
-  visModel.dimensions.forEach(dimension => {
-      var option = {};
-      option[dimension.label] = dimension.name;
-      colorByOptions.push(option)
-  })
-
-  visModel.pivot_fields.forEach(pivot_field => {
-    var option = {};
-    option[pivot_field.label] = pivot_field.name;
-    colorByOptions.push(option)
-  })
-
-  if (visModel.pivot_fields.length > 1 ) {
-    colorByOptions.push({'Pivot Series': 'lookerPivotKey'})
-  }
+    visModel.dimensions.forEach(dimension => {
+        var option = {};
+        option[dimension.label] = dimension.name;
+        colorByOptions.push(option)
+    })
   
-  if (optionChoices.colorBy) {
-    newOptions["colorBy"] = {
+    visModel.pivot_fields.forEach(pivot_field => {
+      var option = {};
+      option[pivot_field.label] = pivot_field.name;
+      colorByOptions.push(option)
+    })
+  
+    if (visModel.pivot_fields.length > 1 ) {
+      colorByOptions.push({'Pivot Series': 'lookerPivotKey'})
+    }
+
+    visOptions["colorBy"] = {
       section: " Visualization",
       type: "string",
       label: "Color By",
@@ -353,8 +360,8 @@ const getConfigOptions = function(visModel, optionChoices=pluginDefaults, baseOp
     } 
   }
 
-  if (optionChoices.groupBy) {
-    newOptions["groupBy"] = {
+  if (pluginSettings.groupBy) {
+    visOptions["groupBy"] = {
       section: " Visualization",
       type: "string",
       label: "Group By",
@@ -365,7 +372,7 @@ const getConfigOptions = function(visModel, optionChoices=pluginDefaults, baseOp
     } 
   }
 
-  return newOptions
+  return visOptions
 }
 
 export { VisPluginModel, getConfigOptions };

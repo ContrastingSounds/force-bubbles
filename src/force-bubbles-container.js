@@ -7,22 +7,9 @@ import {
   getConfigOptions 
 } from "./utilities/vis-plugin.js";
 
-const visOptions = {
-  scale: {
-    section: ' Visualization',
-    type: 'number',
-    display: 'range',
-    label: 'Scale Size By',
-    default: 1.0,
-    min: 0.2,
-    max: 2.0,
-    step: 0.2,
-    order: 100000,
-  }
-}
 
 looker.plugins.visualizations.add({
-  options: visOptions,
+  options: {},
 
   create: function(element, config) {
     this.chart = ReactDOM.render(<div />, element);
@@ -46,17 +33,9 @@ looker.plugins.visualizations.add({
     var visModel = new VisPluginModel(data, config, queryResponse)
     // console.log('visModel', visModel)
     
-    var pluginSettings = {
-      dimensionLabels: true,
-      dimensionHide: false,
-      measureLabels: true,
-      measureStyles: [],
-      colorBy: true,
-      groupBy: true,
-      sizeBy: true,
-      states: {},
-    }
-    this.trigger('registerOptions', getConfigOptions(visModel, pluginSettings, visOptions))
+    // TODO: streamline options registration (e.g. no need for defaults)
+
+    this.trigger('registerOptions', getConfigOptions(visModel))
 
     const visData = visModel.getJson(true, visModel.has_pivots)
     const ranges = visModel.ranges
