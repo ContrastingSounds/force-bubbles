@@ -181,7 +181,12 @@ class VisPluginModel {
           name: supermeasure.name,
           label: supermeasure.label,
           view: '',
-        }) 
+        })
+
+        this.ranges[supermeasure.name] = {
+          min: 100000000,
+          max: 0,
+        }
 
         var column = new Column(column_name)
         column.field_name = supermeasure.name
@@ -286,7 +291,148 @@ class VisPluginModel {
   }
 }
 
-const getConfigOptions = function(visModel) {
+const getPivots = (queryResponse, altVisModel) => {
+  queryResponse.fields.pivots.forEach(pivot => {
+    altVisModel.pivot_fields.push({
+      name: pivot.name,
+      label: pivot.label_short || pivot.label,
+      view: pivot.view_label || '',
+    }) 
+
+    altVisModel.ranges[pivot.name] = {set : []}
+  })
+  
+  altVisModel.ranges['lookerPivotKey'] = {set: []}
+  queryResponse.pivots.forEach(pivot_value => {
+    altVisModel.ranges['lookerPivotKey'].set.push(pivot_value.key)
+
+    for (var key in pivot_value.data) {
+      var current_set = altVisModel.ranges[key].set
+      var row_value = pivot_value.data[key]
+      if (current_set.indexOf(row_value) === -1) {
+        current_set.push(row_value)
+      }
+    } 
+  })
+}
+
+const getDimensions = (queryResponse, altVisModel) => {
+  queryResponse.fields.dimension_like.forEach(dimension => {
+    altVisModel.dimensions.push({
+      name: dimension.name,
+      label: dimension.label_short || dimension.label,
+      view: dimension.view_label || '',
+    })
+    
+    altVisModel.ranges[dimension.name] = { set: [] }
+
+    altVisModel.columns.push({
+      id: dimension.name,
+      field: dimension.name,
+      type: 'dimension',
+    })
+  })
+}
+
+const getMeasures = (queryResponse, altVisModel) => {
+  queryResponse.fields.measure_like.forEach(measure => {
+    console.log('raw measure', measure)
+    altVisModel.measures.push({
+      name: measure.name,
+      label: measure.label_short || measure.label,
+      view: measure.view_label || '',
+      is_table_calculation: typeof measure.is_table_calculation !== 'undefined',
+      is_row_total: false,
+      is_pivoted: queryResponse.pivots.length > 0,
+      is_super: false
+    }) 
+
+    altVisModel.ranges[measure.name] = {
+      min: 100000000,
+      max: 0,
+    }
+
+    if (queryResponse.has_row_totals) {
+      altVisModel.measures.push({
+        name: '$$$_row_total_$$$.' + measure.name,
+        label: (measure.label_short || measure.label) + ' (Row Total)', 
+        view: measure.view_label || '',
+        is_table_calculation: false, // table calcs aren't included in row totals
+        is_row_total: true,
+        is_pivoted: false,
+        is_super: false
+      }) 
+  
+      altVisModel.ranges['$$$_row_total_$$$.' + measure.name] = {
+        min: 100000000,
+        max: 0,
+      }     
+    }
+  })
+  
+  // add to columns
+  if (typeof queryResponse.pivots !== 'undefined') {
+    altVisModel.pivot_values.forEach(pivot_value => {
+      altVisModel.measures.filter(m => !m.is_row_total).forEach(measure => {
+        var shouldAddColumn = (                          // for pivoted measures, skip table calcs for row totals
+          pivot_value['key'] !== '$$$_row_total_$$$'     // if user wants a row total for table calc, must define separately
+        ) || (
+          pivot_value['key'] === '$$$_row_total_$$$' 
+          && !measure.is_table_calculation
+        )
+
+        if (shouldAddColumn) {
+          altVisModel.columns.push({
+            id: pivot_value['key'] + '.' + measure.name,
+            field: measure.name,
+            type: 'measure',
+            is_pivoted: true,
+            pivot_key: pivot_value['key'],
+            is_super: false,
+          })
+        }
+      })
+    })
+  } else {
+    // noticeably simpler for flat tables!
+    altVisModel.measures.length.forEach(measure => {      
+      columns.push({
+        id: measure.name,
+        field: measure.name,
+        type: 'measure',
+        is_pivoted: false,
+        is_row_total: false,
+        is_super: false,
+      })
+    })
+  }
+  
+  // add supermeasures, if present
+  if (queryResponse.fields.supermeasure_like.length > 0) {
+    queryResponse.fields.supermeasure_like.forEach(supermeasure => {
+      altVisModel.measures.push({
+        name: supermeasure.name,
+        label: supermeasure.label,
+        view: '',
+        is_pivoted: false,
+        is_row_total: false,
+        is_super: true
+      }) 
+
+      altVisModel.columns.push({
+        id: supermeasure.name,
+        field: supermeasure.name,
+        type: 'measure',
+        is_pivoted: false,
+        is_super: true
+      })
+    })
+  }
+}
+
+const getConfigOptions = function(model) {
+  const { pivot_fields, dimensions, measures } = model
+
   var pluginSettings = {
     colorBy: true,
     groupBy: true,
@@ -309,7 +455,7 @@ const getConfigOptions = function(visModel) {
 
   if (pluginSettings.sizeBy) {
     var sizeByOptions = [];
-    visModel.measures.forEach(measure => {
+    measures.forEach(measure => {
         var option = {};
         option[measure.label] = measure.name;
         sizeByOptions.push(option);
@@ -333,19 +479,19 @@ const getConfigOptions = function(visModel) {
   if (pluginSettings.colorBy) {
     var colorByOptions = [];
 
-    visModel.dimensions.forEach(dimension => {
+    dimensions.forEach(dimension => {
         var option = {};
         option[dimension.label] = dimension.name;
         colorByOptions.push(option)
     })
   
-    visModel.pivot_fields.forEach(pivot_field => {
+    pivot_fields.forEach(pivot_field => {
       var option = {};
       option[pivot_field.label] = pivot_field.name;
       colorByOptions.push(option)
     })
   
-    if (visModel.pivot_fields.length > 1 ) {
+    if (pivot_fields.length > 1 ) {
       colorByOptions.push({'Pivot Series': 'lookerPivotKey'})
     }
 
@@ -372,7 +518,55 @@ const getConfigOptions = function(visModel) {
     } 
   }
 
+  console.log('getConfigOptions() returns:', visOptions)
   return visOptions
 }
 
-export { VisPluginModel, getConfigOptions };
+/**
+ * 
+ * @param {*} data 
+ * @param {*} config 
+ * @param {*} measures 
+ * 
+ * The vis requires an object per circle
+ * - For a FLAT table (no pivots), or PIVOTED table charting a supermeasure, that's one object per row
+ *    - In future, tooltips might make use of pivoted values for a richer popover)
+ * - For pivoted measures, the data needs to be converted to a TIDY data set i.e. one observation per row
+ * 
+ * Flat, pivoted or tidy
+ * - is it pivoted
+ * - is a supermeasure selected for sizeBy
+ * 
+ * - in future, colorBy could also be a color option. If so, color & size will both need to be sync on measure vs supermeasure
+ * 
+ * ID
+ * - if flat or pivoted, concat dimensions
+ * - if tidy, concat dimensions + pivot_key
+ * 
+ * Value
+ */
+const getData = (data, config, altVisModel) => {
+  var tableType
+  console.log('config.sizeBy', config.sizeBy)
+  const sizeByField = altVisModel.measures.find(measure => measure.name === config.sizeBy)
+  console.log('sizeByField', sizeByField)
+
+  if (altVisModel.pivot_fields.length === 0) {
+    tableType = 'flat'
+  } else if (sizeByField.is_super) {
+    tableType = 'pivoted'
+  } else if (sizeByField.is_pivoted) {
+    tableType = 'tidy'
+  } else {
+    tableType = 'unknown'
+  }
+
+  console.log('table type', tableType)
+
+  return {
+    altData: 'TBD', 
+    altRanges: 'TBD'
+  }
+}
+
+export { VisPluginModel, getPivots, getDimensions, getMeasures, getConfigOptions, getData };
