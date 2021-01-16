@@ -361,6 +361,7 @@ const getMeasures = (queryResponse, altVisModel) => {
     if (queryResponse.has_row_totals) {
       altVisModel.measures.push({
         name: '$$$_row_total_$$$.' + measure.name,
+        field_name: measure.name,
         label: (measure.label_short || measure.label) + ' (Row Total)', 
         view: measure.view_label || '',
         is_table_calculation: false, // table calcs aren't included in row totals
@@ -432,6 +433,11 @@ const getMeasures = (queryResponse, altVisModel) => {
         is_pivoted: false,
         is_super: true
       })
+
+      altVisModel.ranges[supermeasure.name] = {
+        min: 100000000,
+        max: 0,
+      }
     })
   }
 }
@@ -614,9 +620,16 @@ const getData = (data, config, altVisModel) => {
       })
 
       altVisModel.measures.filter(m => m.is_row_total || m.is_super).forEach(measure => {
+        console.log('altVisModel.ranges', altVisModel.ranges)
+        console.log('measure.name', measure.name)
         var current_min = altVisModel.ranges[measure.name].min
+        console.log('current_min', current_min)
         var current_max = altVisModel.ranges[measure.name].max
-        var row_value = row.data[measure.name].value
+        console.log('current_max', current_max)
+        var row_value = measure.is_row_total 
+          ? row[measure.field_name]['$$$_row_total_$$$'].value 
+          : row[measure.name].value
+        console.log('row_value', row_value)
 
         altVisModel.ranges[measure.name].min = Math.min(current_min, row_value)
         altVisModel.ranges[measure.name].max = Math.max(current_max, row_value)
@@ -644,7 +657,7 @@ const getData = (data, config, altVisModel) => {
 
           var current_min = altVisModel.ranges[measure.name].min
           var current_max = altVisModel.ranges[measure.name].max
-          var row_value = row.data[measure.name][pivot.key].value
+          var row_value = row[measure.name][pivot.key].value
   
           altVisModel.ranges[measure.name].min = Math.min(current_min, row_value)
           altVisModel.ranges[measure.name].max = Math.max(current_max, row_value)
@@ -656,6 +669,7 @@ const getData = (data, config, altVisModel) => {
     visPayload.altData = tidyData
   }
 
+  visPayload.altRanges = altVisModel.ranges
   return visPayload
 }
 
