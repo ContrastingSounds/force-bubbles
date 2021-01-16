@@ -579,12 +579,49 @@ const getData = (data, config, altVisModel) => {
   if (tableType !== 'tidy') {
     data.forEach(row => {
       row.observationId = altVisModel.dimensions.map(dimension => row[dimension.name].value).join('|')
+
+      altVisModel.dimensions.forEach(dimension => {
+        var current_set = altVisModel.ranges[dimension.name].set
+        var row_value = row[dimension.name].value
+
+        if (current_set.indexOf(row_value) === -1) {
+          current_set.push(row_value)
+        }
+      })
+
+      altVisModel.measures.forEach(measure => {
+        var current_min = altVisModel.ranges[measure.name].min
+        var current_max = altVisModel.ranges[measure.name].max
+        var row_value = row.data[measure.name].value
+
+        altVisModel.ranges[measure.name].min = Math.min(current_min, row_value)
+        altVisModel.ranges[measure.name].max = Math.max(current_max, row_value)
+      })
     })
     visPayload.altData = data
   } else {
     var tidyData = []
     data.forEach(row => {
       console.log('row', row)
+
+      altVisModel.dimensions.forEach(dimension => {
+        var current_set = altVisModel.ranges[dimension.name].set
+        var row_value = row[dimension.name].value
+
+        if (current_set.indexOf(row_value) === -1) {
+          current_set.push(row_value)
+        }
+      })
+
+      altVisModel.measures.filter(m => m.is_row_total || m.is_super).forEach(measure => {
+        var current_min = altVisModel.ranges[measure.name].min
+        var current_max = altVisModel.ranges[measure.name].max
+        var row_value = row.data[measure.name].value
+
+        altVisModel.ranges[measure.name].min = Math.min(current_min, row_value)
+        altVisModel.ranges[measure.name].max = Math.max(current_max, row_value)
+      })
+
       altVisModel.measures.filter(m => !m.is_row_total && !m.is_super).forEach(measure => {
         console.log('measure', measure)
         altVisModel.pivot_values.filter(p => !p.is_total).forEach(pivot => {
@@ -604,6 +641,13 @@ const getData = (data, config, altVisModel) => {
             observationId: key
           }
           observation[measure.name] = row[measure.name][pivot.key]
+
+          var current_min = altVisModel.ranges[measure.name].min
+          var current_max = altVisModel.ranges[measure.name].max
+          var row_value = row.data[measure.name][pivot.key].value
+  
+          altVisModel.ranges[measure.name].min = Math.min(current_min, row_value)
+          altVisModel.ranges[measure.name].max = Math.max(current_max, row_value)
 
           tidyData.push(observation)
         })
