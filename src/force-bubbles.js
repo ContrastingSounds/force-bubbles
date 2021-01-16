@@ -37,9 +37,9 @@ const ForceBubbles = (props) => {
 
   const simulation = forceSimulation(props.data)
     .force('charge', forceManyBody().strength(5))
-    .force('forceX', forceX(d => calcX(d[props.groupBy])))
+    .force('forceX', forceX(d => calcX(d[props.groupBy].value)))
     .force('forceY', forceY(props.height / 2))
-    .force('collision', forceCollide().radius(d => calcSize(d[props.sizeBy])))
+    .force('collision', forceCollide().radius(d => calcSize(d[props.sizeBy].value)))
     .stop()
 
 
@@ -52,22 +52,22 @@ const ForceBubbles = (props) => {
         
         var circles = select(d3Container.current)
           .selectAll('circle')
-          .data(props.data, d => d.lookerId) 
+          .data(props.data, d => d.observationId) 
     
         circles.enter()
           .append('circle')
             .classed('bubble', true)
-            .attr('r', d => calcSize(d[props.sizeBy]))
+            .attr('r', d => calcSize(d[props.sizeBy].value))
             .attr('cx', d => d.x)
             .attr('cy', d => d.y)
-            .style('fill', d => colorScale(d[props.colorBy]))
+            .style('fill', d => colorScale(d[props.colorBy].value))
     
         circles.transition()
           .duration(250)
-            .attr('r', d => calcSize(d[props.sizeBy]))
+            .attr('r', d => calcSize(d[props.sizeBy].value))
             .attr('cx', d =>  d.x)
             .attr('cy', d => d.y)
-            .style('fill', d => colorScale(d[props.colorBy]))
+            .style('fill', d => colorScale(d[props.colorBy].value))
       
         circles.exit().remove()
     

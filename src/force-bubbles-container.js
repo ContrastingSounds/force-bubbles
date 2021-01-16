@@ -3,7 +3,6 @@ import ReactDOM from "react-dom";
 
 import ForceBubbles from "./force-bubbles";
 import { 
-  VisPluginModel, 
   getPivots,
   getDimensions,
   getMeasures,
@@ -32,45 +31,58 @@ looker.plugins.visualizations.add({
     // BUILD THE VIS
     // 1. Create model object
     // 2. Register options
-    // 3. Build vis
-
-    var visModel = new VisPluginModel(data, config, queryResponse)
-    // console.log('visModel', visModel)
+    // 3. Render vis
     
-    var altVisModel = {
+    var visModel = {
       pivot_fields: [],
       pivot_values: [],
       dimensions: [],
       measures: [],
-      columns: [],
       ranges: {}
     }
 
-    altVisModel.pivot_values = queryResponse.pivots
-    getPivots(queryResponse, altVisModel)
-    getDimensions(queryResponse, altVisModel)
-    getMeasures(queryResponse, altVisModel)
-    console.log('altVisModel', altVisModel)
+    visModel.pivot_values = queryResponse.pivots.filter(p => p.key !== '$$$_row_total_$$$')
+    getPivots(queryResponse, visModel)
+    getDimensions(queryResponse, visModel)
+    getMeasures(queryResponse, visModel)
+    console.log('visModel', visModel)
     
-    this.trigger('registerOptions', getConfigOptions(altVisModel))
+    this.trigger('registerOptions', getConfigOptions(visModel))
 
-    const visData = visModel.getJson(true, visModel.has_pivots)
-    const visModelRanges = visModel.ranges
+    const {visData, visRanges} = getData(data, config, visModel)
     console.log('visData', visData)
-    console.log('visModelRanges', visModelRanges)
+    console.log('visRanges', visRanges)
 
-    const {altData, altRanges} = getData(data, config, altVisModel)
-    console.log('altData', altData)
-    console.log('altRanges', altRanges)
+    var colorBy = config.colorBy
+    var groupBy = config.groupBy
+
+    var sizeMeasure = visModel.measures.find(m => m.name === config.sizeBy)
+    if (sizeMeasure.is_row_total || sizeMeasure.is_super) {
+      var sizeBy = sizeMeasure.is_super ? config.sizeBy : config.sizeBy.slice(18)
+      var list_of_pivot_fields = visModel.pivot_fields.map(p => p.name)
+      console.log('list of pivots', list_of_pivot_fields)
+      if (list_of_pivot_fields.includes(config.colorBy)) {
+        var colorBy = visModel.dimensions[0].name
+      }
+      if (list_of_pivot_fields.includes(config.groupBy)) {
+        var groupBy = visModel.dimensions[0].name
+      }
+    } else {
+      var sizeBy = config.sizeBy
+    }
+
+    console.log('colorBy', colorBy)
+    console.log('groupBy', groupBy)
+    console.log('sizeBy', sizeBy)
 
     this.chart = ReactDOM.render(
       <ForceBubbles
-        colorBy={config.colorBy}
-        groupBy={config.groupBy}
-        sizeBy={config.sizeBy}
+        colorBy={colorBy}
+        groupBy={groupBy}
+        sizeBy={sizeBy}
         scale={config.scale}
         data={visData}
-        ranges={visModelRanges}
+        ranges={visRanges}
         width={element.clientWidth}
         height={element.clientHeight}
       />,
