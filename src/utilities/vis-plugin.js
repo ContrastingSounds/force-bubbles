@@ -291,6 +291,12 @@ class VisPluginModel {
   }
 }
 
+/**
+ * Sets values of visModel.pivot_fields array
+ * Gets the range of each pivot field (i.e. the set of unique dimension values)
+ * @param {*} queryResponse 
+ * @param {*} altVisModel 
+ */
 const getPivots = (queryResponse, altVisModel) => {
   queryResponse.fields.pivots.forEach(pivot => {
     altVisModel.pivot_fields.push({
@@ -528,10 +534,12 @@ const getConfigOptions = function(model) {
  * @param {*} config 
  * @param {*} measures 
  * 
- * The vis requires an object per circle
- * - For a FLAT table (no pivots), or PIVOTED table charting a supermeasure, that's one object per row
+ * The vis requires an object per circle (in data terms, one observation per data point)
+ * - For a FLAT table (no pivots), or PIVOTED table charting a ROW TOTAL or SUPERMEASURE, that's one object per row
  *    - In future, tooltips might make use of pivoted values for a richer popover)
- * - For pivoted measures, the data needs to be converted to a TIDY data set i.e. one observation per row
+ * - For pivoted measures, the data needs to be converted to a TIDY data set
+ *    - Each pivot value can be treated as additional dimension(s)
+ *    - The raw data structure therefore contains one cell per row per pivot value
  * 
  * Flat, pivoted or tidy
  * - is it pivoted
@@ -563,10 +571,48 @@ const getData = (data, config, altVisModel) => {
 
   console.log('table type', tableType)
 
-  return {
-    altData: 'TBD', 
+  var visPayload = {
+    altData: 'TBD',
     altRanges: 'TBD'
   }
+
+  if (tableType !== 'tidy') {
+    data.forEach(row => {
+      row.observationId = altVisModel.dimensions.map(dimension => row[dimension.name].value).join('|')
+    })
+    visPayload.altData = data
+  } else {
+    var tidyData = []
+    data.forEach(row => {
+      console.log('row', row)
+      altVisModel.measures.filter(m => !m.is_row_total && !m.is_super).forEach(measure => {
+        console.log('measure', measure)
+        altVisModel.pivot_values.filter(p => !p.is_total).forEach(pivot => {
+          console.log('pivot', pivot)
+
+          console.log('measure.name', measure.name)
+          console.log('dimensions', ...altVisModel.dimensions.map(dimension => row[dimension.name].value))
+          console.log('pivot.key', pivot.key)
+          var key = [
+            measure.name,
+            ...altVisModel.dimensions.map(dimension => row[dimension.name].value),
+            pivot.key
+          ].join('|')
+          console.log('key', key)
+
+          var observation = {
+            observationId: key
+          }
+          observation[measure.name] = row[measure.name][pivot.key]
+
+          tidyData.push(observation)
+        })
+      })
+    })
+    visPayload.altData = tidyData
+  }
+
+  return visPayload
 }
 
 export { VisPluginModel, getPivots, getDimensions, getMeasures, getConfigOptions, getData };
