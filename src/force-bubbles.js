@@ -10,7 +10,6 @@ import './force-bubbles.css';
 
 
 const ForceBubbles = (props) => {
-  console.log('ForceBubbles() props', props)
   const d3Container = useRef(null);
   
   const calcSize = (value) => {

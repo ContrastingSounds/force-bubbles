@@ -19,10 +19,6 @@ looker.plugins.visualizations.add({
   },
 
   updateAsync: function(data, element, config, queryResponse, details, done) {
-    console.log('data', data)
-    console.log('config', config)
-    console.log('queryResponse', queryResponse)
-
     // ERROR HANDLING
     this.clearErrors();
 
@@ -49,7 +45,6 @@ looker.plugins.visualizations.add({
 
     // 4. Transform raw data to structure suitable for vis
     getDataAndRanges(data, config, visModel)
-    console.log('visModel', visModel)
 
     
     // VALIDATE CONFIG SETTINGS AGAINST DATA
@@ -75,8 +70,6 @@ looker.plugins.visualizations.add({
       }
     }
 
-    console.log('visConfig', visConfig)
-
     this.chart = ReactDOM.render(
       <ForceBubbles
         colorBy={visConfig.colorBy}
@@ -93,8 +86,7 @@ looker.plugins.visualizations.add({
       element
     );
 
-    // DEBUG OUTPUT AND DONE
-    // console.log('element', element)
+    // LET LOOKER KNOW VIS IS COMPLETE
     done();
   }
 })
