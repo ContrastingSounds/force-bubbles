@@ -25,6 +25,13 @@ looker.plugins.visualizations.add({
     // TRANSLATE LOOKER OBJECTS INTO STRUCTURE FOR THE VIS
 
     // 1. Define the structure
+    var visConfig = {
+      colorBy: config.colorBy,
+      groupBy: config.groupBy,
+      sizeBy: config.sizeBy,
+      scale: config.scale
+    }
+
     var visModel = {
       pivot_fields: [],
       pivot_values: [],
@@ -44,18 +51,10 @@ looker.plugins.visualizations.add({
     this.trigger('registerOptions', getConfigOptions(visModel))
 
     // 4. Transform raw data to structure suitable for vis
-    getDataAndRanges(data, config, visModel)
+    getDataAndRanges(data, visConfig, visModel)
 
     
     // VALIDATE CONFIG SETTINGS AGAINST DATA
-    // e.g. it is not possible to group by pivot value when sizing by a row total
-    var visConfig = {
-      colorBy: config.colorBy,
-      groupBy: config.groupBy,
-      sizeBy: config.sizeBy,
-      scale: config.scale
-    }
-
     // If the sizeBy measure is a row total or a supermeasure,
     // the colorBy and groupBy fields MUST be dimensions.
     // If the config isn't a dimension, will default to first dimension.

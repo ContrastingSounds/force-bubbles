@@ -203,8 +203,8 @@ const getConfigOptions = function(model) {
  * - if tidy, concat dimensions + pivot_key
  * 
  */
-const getDataAndRanges = (data, config, visModel) => {
-  const sizeByField = visModel.measures.find(measure => measure.name === config.sizeBy)
+const getDataAndRanges = (data, visConfig, visModel) => {
+  const sizeByField = visModel.measures.find(measure => measure.name === visConfig.sizeBy)
   const shouldMeltData = sizeByField.is_pivoted
 
   if (!shouldMeltData) {
