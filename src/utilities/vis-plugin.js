@@ -237,10 +237,12 @@ const getData = (data, config, visModel) => {
 
       visModel.measures.forEach(measure => {
         if (measure.is_row_total) {
-          row[measure.field_name] = {...row[measure.field_name], ...row[measure.field_name]['$$$_row_total_$$$']}
+          row[measure.name] = row[measure.field_name]['$$$_row_total_$$$']
         }
+
         var current_min = visModel.ranges[measure.name].min
         var current_max = visModel.ranges[measure.name].max
+
         var row_value = measure.is_row_total 
           ? row[measure.field_name]['$$$_row_total_$$$'].value 
           : row[measure.name].value

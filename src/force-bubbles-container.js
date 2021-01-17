@@ -53,34 +53,39 @@ looker.plugins.visualizations.add({
     console.log('visData', visData)
     console.log('visRanges', visRanges)
 
-    var colorBy = config.colorBy
-    var groupBy = config.groupBy
 
-    var sizeMeasure = visModel.measures.find(m => m.name === config.sizeBy)
-    if (sizeMeasure.is_row_total || sizeMeasure.is_super) {
-      var sizeBy = sizeMeasure.is_super ? config.sizeBy : config.sizeBy.slice(18)
-      var list_of_pivot_fields = visModel.pivot_fields.map(p => p.name)
-      console.log('list of pivots', list_of_pivot_fields)
-      if (list_of_pivot_fields.includes(config.colorBy)) {
-        var colorBy = visModel.dimensions[0].name
-      }
-      if (list_of_pivot_fields.includes(config.groupBy)) {
-        var groupBy = visModel.dimensions[0].name
-      }
-    } else {
-      var sizeBy = config.sizeBy
+    var visConfig = {
+      colorBy: config.colorBy,
+      groupBy: config.groupBy,
+      sizeBy: config.sizeBy,
+      scale: config.scale
     }
 
-    console.log('colorBy', colorBy)
-    console.log('groupBy', groupBy)
-    console.log('sizeBy', sizeBy)
+    // If the sizeBy measure is a row total or a supermeasure,
+    // the colorBy and groupBy fields MUST be dimensions.
+    // If the config isn't a dimension, will default to first dimension.
+    var sizeMeasure = visModel.measures.find(m => m.name === config.sizeBy)
+    if (sizeMeasure.is_row_total || sizeMeasure.is_super) {
+      // var sizeBy = sizeMeasure.is_super ? config.sizeBy : config.sizeBy.slice(18)
+      var list_of_pivot_fields = visModel.pivot_fields.map(p => p.name)
+      if (list_of_pivot_fields.includes(config.colorBy)) {
+        visConfig.colorBy = visModel.dimensions[0].name
+      }
+      if (list_of_pivot_fields.includes(config.groupBy)) {
+        visConfig.groupBy = visModel.dimensions[0].name
+      }
+    }
+
+    console.log('colorBy', visConfig.colorBy)
+    console.log('groupBy', visConfig.groupBy)
+    console.log('sizeBy', visConfig.sizeBy)
 
     this.chart = ReactDOM.render(
       <ForceBubbles
-        colorBy={colorBy}
-        groupBy={groupBy}
-        sizeBy={sizeBy}
-        scale={config.scale}
+        colorBy={visConfig.colorBy}
+        groupBy={visConfig.groupBy}
+        sizeBy={visConfig.sizeBy}
+        scale={visConfig.scale}
         data={visData}
         ranges={visRanges}
         width={element.clientWidth}

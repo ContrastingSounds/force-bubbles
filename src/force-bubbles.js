@@ -10,12 +10,14 @@ import './force-bubbles.css';
 
 
 const ForceBubbles = (props) => {
+  console.log('ForceBubbles() props', props)
   const d3Container = useRef(null);
   
   const calcSize = (value) => {
     if (typeof props.sizeBy !== 'undefined') {
       var max = props.ranges[props.sizeBy].max
       var scale = props.scale
+      
       return Math.floor(5 + (value / max * 45 * scale))
     } else {
       return 20
