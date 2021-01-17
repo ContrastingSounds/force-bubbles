@@ -1,4 +1,11 @@
 /**
+ * Force Bubbles Model
+ * 
+ * Each data visualisation has varying data requirements, which will vary from the raw objects
+ * provided by the Looker plugin framework (or Looker API if using API calls)
+ */
+
+/**
  * Sets values of visModel.pivot_fields array
  * Gets the range of each pivot field (i.e. the set of unique dimension values)
  * @param {*} queryResponse 
@@ -6,12 +13,12 @@
  */
 const getPivots = (queryResponse, visModel) => {
   queryResponse.fields.pivots.filter(p => p.key !== '$$$_row_total_$$$').forEach(pivot => {
-    visModel.pivot_fields.push({
-      name: pivot.name,
+    const field_updates = {
       label: pivot.label_short || pivot.label,
       view: pivot.view_label || '',
-    }) 
+    }
 
+    visModel.pivot_fields.push({...pivot, field_updates}) 
     visModel.ranges[pivot.name] = {set : []}
   })
   
@@ -31,28 +38,28 @@ const getPivots = (queryResponse, visModel) => {
 
 const getDimensions = (queryResponse, visModel) => {
   queryResponse.fields.dimension_like.forEach(dimension => {
-    visModel.dimensions.push({
-      name: dimension.name,
+    const field_updates = {
       label: dimension.label_short || dimension.label,
       view: dimension.view_label || '',
-    })
+    }
     
+    visModel.dimensions.push({...dimension, ...field_updates})
     visModel.ranges[dimension.name] = { set: [] }
   })
 }
 
 const getMeasures = (queryResponse, visModel) => {
   queryResponse.fields.measure_like.forEach(measure => {
-    visModel.measures.push({
-      name: measure.name,
+    const field_updates = {
       label: measure.label_short || measure.label,
       view: measure.view_label || '',
       is_table_calculation: typeof measure.is_table_calculation !== 'undefined',
       is_row_total: false,
       is_pivoted: queryResponse.pivots.length > 0,
-      is_super: false
-    }) 
-
+      is_super: false,
+    }
+    
+    visModel.measures.push({...measure, ...field_updates}) 
     visModel.ranges[measure.name] = {
       min: 100000000,
       max: 0,
@@ -80,15 +87,14 @@ const getMeasures = (queryResponse, visModel) => {
   // add supermeasures, if present
   if (queryResponse.fields.supermeasure_like.length > 0) {
     queryResponse.fields.supermeasure_like.forEach(supermeasure => {
-      visModel.measures.push({
-        name: supermeasure.name,
-        label: supermeasure.label,
+      const field_updates = {
         view: '',
         is_pivoted: false,
         is_row_total: false,
         is_super: true
-      }) 
+      }
 
+      visModel.measures.push({...supermeasure, ...field_updates}) 
       visModel.ranges[supermeasure.name] = {
         min: 100000000,
         max: 0,
@@ -182,47 +188,26 @@ const getConfigOptions = function(model) {
  * 
  * @param {*} data 
  * @param {*} config 
- * @param {*} measures 
+ * @param {*} visModel 
  * 
  * The vis requires an object per circle (in data terms, one observation per data point)
  * - For a FLAT table (no pivots), or PIVOTED table charting a ROW TOTAL or SUPERMEASURE, that's one object per row
- *    - In future, tooltips might make use of pivoted values for a richer popover)
  * - For pivoted measures, the data needs to be converted to a TIDY data set
  *    - Each pivot value can be treated as additional dimension(s)
  *    - The raw data structure therefore contains one cell per row per pivot value
  * 
- * Flat, pivoted or tidy
- * - is it pivoted
- * - is a supermeasure selected for sizeBy
+ * - in future, colorBy could also be a measure. If so, color & size will both need to be sync on measure vs supermeasure
  * 
- * - in future, colorBy could also be a color option. If so, color & size will both need to be sync on measure vs supermeasure
- * 
- * ID
+ * ObservationId
  * - if flat or pivoted, concat dimensions
  * - if tidy, concat dimensions + pivot_key
  * 
- * Value
  */
-const getData = (data, config, visModel) => {
-  var tableType
+const getDataAndRanges = (data, config, visModel) => {
   const sizeByField = visModel.measures.find(measure => measure.name === config.sizeBy)
+  const shouldMeltData = sizeByField.is_pivoted
 
-  if (visModel.pivot_fields.length === 0) {
-    tableType = 'flat'
-  } else if (sizeByField.is_row_total || sizeByField.is_super ) {
-    tableType = 'pivoted'
-  } else if (sizeByField.is_pivoted) {
-    tableType = 'tidy'
-  } else {
-    tableType = 'unknown'
-  }
-
-  var visPayload = {
-    visData: 'TBD',
-    visRanges: 'TBD'
-  }
-
-  if (tableType !== 'tidy') {
+  if (!shouldMeltData) {
     data.forEach(row => {
       row.observationId = visModel.dimensions.map(dimension => row[dimension.name].value).join('|')
 
@@ -251,7 +236,7 @@ const getData = (data, config, visModel) => {
         visModel.ranges[measure.name].max = Math.max(current_max, row_value)
       })
     })
-    visPayload.visData = data
+    visModel.data = data
   } else {
     var tidyData = []
     data.forEach(row => {
@@ -307,11 +292,8 @@ const getData = (data, config, visModel) => {
         tidyData.push(observation)
       })
     })
-    visPayload.visData = tidyData
+    visModel.data = tidyData
   }
-
-  visPayload.visRanges = visModel.ranges
-  return visPayload
 }
 
-export { getPivots, getDimensions, getMeasures, getConfigOptions, getData };
+export { getPivots, getDimensions, getMeasures, getConfigOptions, getDataAndRanges };

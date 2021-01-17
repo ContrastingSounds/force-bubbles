@@ -7,8 +7,8 @@ import {
   getDimensions,
   getMeasures,
   getConfigOptions,
-  getData,
-} from "./utilities/vis-plugin.js";
+  getDataAndRanges,
+} from "./force-bubbles-model.js";
 
 
 looker.plugins.visualizations.add({
@@ -26,34 +26,34 @@ looker.plugins.visualizations.add({
     // ERROR HANDLING
     this.clearErrors();
 
-    // INITIALISE THE VIS
+    // TRANSLATE LOOKER OBJECTS INTO STRUCTURE FOR THE VIS
 
-    // BUILD THE VIS
-    // 1. Create model object
-    // 2. Register options
-    // 3. Render vis
-    
+    // 1. Define the structure
     var visModel = {
       pivot_fields: [],
       pivot_values: [],
       dimensions: [],
       measures: [],
+      data: [],
       ranges: {}
     }
 
+    // 2. Get the metadata (pivots, dimensions, measures)
     visModel.pivot_values = queryResponse.pivots.filter(p => p.key !== '$$$_row_total_$$$')
     getPivots(queryResponse, visModel)
     getDimensions(queryResponse, visModel)
     getMeasures(queryResponse, visModel)
-    console.log('visModel', visModel)
     
+    // 3. Register config options based on the metadata
     this.trigger('registerOptions', getConfigOptions(visModel))
 
-    const {visData, visRanges} = getData(data, config, visModel)
-    console.log('visData', visData)
-    console.log('visRanges', visRanges)
+    // 4. Transform raw data to structure suitable for vis
+    getDataAndRanges(data, config, visModel)
+    console.log('visModel', visModel)
 
-
+    
+    // VALIDATE CONFIG SETTINGS AGAINST DATA
+    // e.g. it is not possible to group by pivot value when sizing by a row total
     var visConfig = {
       colorBy: config.colorBy,
       groupBy: config.groupBy,
@@ -66,7 +66,6 @@ looker.plugins.visualizations.add({
     // If the config isn't a dimension, will default to first dimension.
     var sizeMeasure = visModel.measures.find(m => m.name === config.sizeBy)
     if (sizeMeasure.is_row_total || sizeMeasure.is_super) {
-      // var sizeBy = sizeMeasure.is_super ? config.sizeBy : config.sizeBy.slice(18)
       var list_of_pivot_fields = visModel.pivot_fields.map(p => p.name)
       if (list_of_pivot_fields.includes(config.colorBy)) {
         visConfig.colorBy = visModel.dimensions[0].name
@@ -76,9 +75,7 @@ looker.plugins.visualizations.add({
       }
     }
 
-    console.log('colorBy', visConfig.colorBy)
-    console.log('groupBy', visConfig.groupBy)
-    console.log('sizeBy', visConfig.sizeBy)
+    console.log('visConfig', visConfig)
 
     this.chart = ReactDOM.render(
       <ForceBubbles
@@ -86,8 +83,10 @@ looker.plugins.visualizations.add({
         groupBy={visConfig.groupBy}
         sizeBy={visConfig.sizeBy}
         scale={visConfig.scale}
-        data={visData}
-        ranges={visRanges}
+
+        data={visModel.data}
+        ranges={visModel.ranges}
+        
         width={element.clientWidth}
         height={element.clientHeight}
       />,
